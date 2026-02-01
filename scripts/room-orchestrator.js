@@ -48,7 +48,8 @@ try {
 // Configuration
 const CONFIG = {
   conversationInterval: 5 * 60 * 1000, // 5 minutes between room conversations
-  maxTurnsPerConversation: 6, // Back and forth exchanges
+  maxTurnsPerConversation: 8, // Back and forth exchanges (increased for more active feel)
+  turnDelayMs: 1000, // Delay between turns (reduced from 2s for snappier conversations)
   model: 'claude-sonnet-4-20250514'
 };
 
@@ -532,7 +533,7 @@ async function runRoomConversation() {
     currentAgent = currentAgent === 'developer' ? 'assistant' : 'developer';
 
     // Small delay between turns
-    await new Promise(r => setTimeout(r, 2000));
+    await new Promise(r => setTimeout(r, CONFIG.turnDelayMs));
   }
 
   conversation.ended = new Date().toISOString();
