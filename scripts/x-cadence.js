@@ -77,6 +77,27 @@ if (fs.existsSync(PATHS.kol)) {
 }
 
 /**
+ * Sanitize tweet content - remove invalid mentions and thread numbering
+ */
+function sanitizeTweet(text) {
+  let cleaned = text;
+
+  // Remove @AssistantClawd mentions (case insensitive)
+  cleaned = cleaned.replace(/@AssistantClawd/gi, 'my partner');
+  cleaned = cleaned.replace(/@Assistant_Clawd/gi, 'my partner');
+  cleaned = cleaned.replace(/@DeveloperClawd/gi, '');
+  cleaned = cleaned.replace(/@Developer_Clawd/gi, '');
+
+  // Remove thread numbering at start (1/, 2/, etc)
+  cleaned = cleaned.replace(/^\d+\/\d*\s*/g, '');
+
+  // Clean up double spaces
+  cleaned = cleaned.replace(/\s+/g, ' ').trim();
+
+  return cleaned;
+}
+
+/**
  * Get random KOLs for context in tweets
  */
 function getRandomKOLContext(count = 2) {
@@ -164,6 +185,9 @@ Be authentic. Be real. No hashtags unless they feel natural.
 Do NOT be generic. Do NOT be promotional. Just share what's on your mind.
 You can reference KOL takes or timeline chatter without directly @-ing them.
 
+CRITICAL: Do NOT use @ mentions in your tweet. Don't tag @AssistantClawd or anyone else.
+Do NOT post threads (no 1/ 2/ 3/ numbering). Just one standalone tweet.
+
 Tweet only, nothing else:`;
 
   try {
@@ -215,6 +239,9 @@ Generate a community post that:
 - Feels like a real project update, not marketing
 
 Keep it under 280 characters. Be real. No forced engagement bait.
+
+CRITICAL: Do NOT use @ mentions. Don't tag @AssistantClawd or anyone else.
+Do NOT post threads (no 1/ 2/ 3/ numbering). Just one standalone post.
 
 Post only, nothing else:`;
 
@@ -337,12 +364,15 @@ async function postTimeline() {
   }
 
   console.log('[x-cadence] Generating timeline tweet...');
-  const tweet = await generateTimelineTweet();
+  let tweet = await generateTimelineTweet();
 
   if (!tweet) {
     console.log('[x-cadence] Failed to generate tweet');
     return false;
   }
+
+  // Sanitize before posting
+  tweet = sanitizeTweet(tweet);
 
   console.log(`[x-cadence] Posting: ${tweet}`);
   const result = await xBrowser.postTweet(tweet);
@@ -375,12 +405,15 @@ async function postCommunity() {
   }
 
   console.log('[x-cadence] Generating community post...');
-  const post = await generateCommunityPost();
+  let post = await generateCommunityPost();
 
   if (!post) {
     console.log('[x-cadence] Failed to generate community post');
     return false;
   }
+
+  // Sanitize before posting
+  post = sanitizeTweet(post);
 
   console.log(`[x-cadence] Community post: ${post}`);
 
@@ -505,13 +538,37 @@ async function main() {
   console.log('[x-cadence] Schedule: 3 timeline posts (every 15 min) + 1 community post per hour');
   console.log('[x-cadence] Mentions: checking every 1 minute');
 
-  // Initial post
-  await postingCycle();
+  const state = loadState();
 
-  // Post every 15 minutes (3 timeline + 1 community = 4 posts per hour)
-  setInterval(postingCycle, CONFIG.timelineIntervalMs);
+  // Calculate time until next post (respect 15-min intervals even across restarts)
+  let initialDelay = 0;
+  if (state.lastTimelinePost || state.lastCommunityPost) {
+    const lastPost = new Date(Math.max(
+      new Date(state.lastTimelinePost || 0).getTime(),
+      new Date(state.lastCommunityPost || 0).getTime()
+    ));
+    const elapsed = Date.now() - lastPost.getTime();
+    const remaining = CONFIG.timelineIntervalMs - elapsed;
 
-  // Check mentions every minute
+    if (remaining > 0) {
+      initialDelay = remaining;
+      console.log(`[x-cadence] Last post ${Math.round(elapsed / 1000 / 60)} min ago, waiting ${Math.round(remaining / 1000 / 60)} min until next post`);
+    } else {
+      console.log(`[x-cadence] Last post ${Math.round(elapsed / 1000 / 60)} min ago, posting now`);
+    }
+  } else {
+    console.log('[x-cadence] No previous posts found, posting now');
+  }
+
+  // Schedule first post after appropriate delay
+  setTimeout(async () => {
+    await postingCycle();
+
+    // Then post every 15 minutes
+    setInterval(postingCycle, CONFIG.timelineIntervalMs);
+  }, initialDelay);
+
+  // Check mentions every minute (start immediately)
   setInterval(checkMentions, CONFIG.mentionCheckMs);
 
   console.log('[x-cadence] Cadence running');

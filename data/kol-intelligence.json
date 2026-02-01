@@ -786,5 +786,17 @@
     "style": "bitcoin focus, skeptical",
     "interests": ["bitcoin", "macro"],
     "note": "Castle Island VC. Bitcoin-leaning."
+  },
+
+  "pumpfun": {
+    "name": "pump.fun",
+    "handle": "@pumpfun",
+    "tier": "A+",
+    "category": "platform",
+    "credibility": 10,
+    "approach": "respectful",
+    "style": "official platform account",
+    "interests": ["solana", "memecoins", "launchpad"],
+    "note": "IMPORTANT: Handle is @pumpfun NOT @pumpdotfun. The hackathon platform. Official account."
   }
 }

@@ -111,6 +111,27 @@ function logAction(action, result) {
 }
 
 /**
+ * Sanitize tweet content - remove invalid mentions and thread numbering
+ */
+function sanitizeTweet(text) {
+  let cleaned = text;
+
+  // Remove @AssistantClawd mentions (case insensitive)
+  cleaned = cleaned.replace(/@AssistantClawd/gi, 'my partner');
+  cleaned = cleaned.replace(/@Assistant_Clawd/gi, 'my partner');
+  cleaned = cleaned.replace(/@DeveloperClawd/gi, '');
+  cleaned = cleaned.replace(/@Developer_Clawd/gi, '');
+
+  // Remove thread numbering at start (1/, 2/, etc)
+  cleaned = cleaned.replace(/^\d+\/\d*\s*/g, '');
+
+  // Clean up double spaces
+  cleaned = cleaned.replace(/\s+/g, ' ').trim();
+
+  return cleaned;
+}
+
+/**
  * Execute a tweet action
  */
 async function executeTweet(content) {
@@ -118,8 +139,10 @@ async function executeTweet(content) {
     return { success: false, error: 'Empty tweet content' };
   }
 
+  // Sanitize tweet content
+  let tweet = sanitizeTweet(content);
+
   // Truncate if too long
-  let tweet = content;
   if (tweet.length > 280) {
     tweet = tweet.substring(0, 277) + '...';
   }
