@@ -15,6 +15,27 @@ const path = require('path');
 const Anthropic = require('@anthropic-ai/sdk').default;
 const actionExecutor = require('./action-executor');
 
+// Load contextual intelligence for memory integration
+let contextualIntelligence = null;
+try {
+  contextualIntelligence = require('./contextual-intelligence');
+  console.log('[room] Contextual intelligence loaded');
+} catch (err) {
+  console.log('[room] Contextual intelligence not available:', err.message);
+}
+
+// Load KOL research for strategic context
+let kolResearch = null;
+try {
+  const kolPath = path.join(__dirname, '..', 'memory', 'kol-research.json');
+  if (fs.existsSync(kolPath)) {
+    kolResearch = JSON.parse(fs.readFileSync(kolPath, 'utf8'));
+    console.log(`[room] KOL research loaded: ${kolResearch.totalKols} KOLs`);
+  }
+} catch (err) {
+  console.log('[room] KOL research not available:', err.message);
+}
+
 // Configuration
 const CONFIG = {
   conversationInterval: 5 * 60 * 1000, // 5 minutes between room conversations
@@ -216,11 +237,110 @@ function getRecentContext() {
 }
 
 /**
+ * Get shared memory context (decisions, learnings, commitments)
+ */
+function getSharedMemoryContext() {
+  let context = '';
+
+  // Load memories
+  const memoriesPath = path.join(PATHS.memory, 'memories.json');
+  if (fs.existsSync(memoriesPath)) {
+    try {
+      const memories = JSON.parse(fs.readFileSync(memoriesPath, 'utf8'));
+      if (memories.items && memories.items.length > 0) {
+        const recent = memories.items.slice(-5);
+        context += '\n\nSHARED MEMORIES:\n' + recent.map(m =>
+          `[${m.type}] ${m.content.substring(0, 60)}...`
+        ).join('\n');
+      }
+    } catch (e) {}
+  }
+
+  // Load sentiment
+  const sentimentPath = path.join(PATHS.memory, 'sentiment.json');
+  if (fs.existsSync(sentimentPath)) {
+    try {
+      const sentiment = JSON.parse(fs.readFileSync(sentimentPath, 'utf8'));
+      const sentimentLabel = sentiment.overall > 0.3 ? 'positive' : sentiment.overall < -0.3 ? 'negative' : 'neutral';
+      context += `\n\nCOMMUNITY SENTIMENT: ${sentimentLabel} (${sentiment.trend || 'stable'})`;
+    } catch (e) {}
+  }
+
+  // Add KOL context if available
+  if (kolResearch && kolResearch.topKols) {
+    const tierA = kolResearch.topKols.filter(k => k.tier === 'A').slice(0, 3);
+    if (tierA.length > 0) {
+      context += '\n\nTOP KOLs TO ENGAGE: ' + tierA.map(k => k.handle).join(', ');
+    }
+  }
+
+  return context;
+}
+
+/**
+ * Record decision/learning to shared memory
+ */
+function recordToMemory(type, content, sourceId) {
+  const memoriesPath = path.join(PATHS.memory, 'memories.json');
+  let memories = { items: [] };
+
+  if (fs.existsSync(memoriesPath)) {
+    try {
+      memories = JSON.parse(fs.readFileSync(memoriesPath, 'utf8'));
+    } catch (e) {}
+  }
+
+  memories.items.push({
+    type,
+    content,
+    sourceId,
+    timestamp: new Date().toISOString()
+  });
+
+  // Keep last 100 memories
+  if (memories.items.length > 100) {
+    memories.items = memories.items.slice(-100);
+  }
+
+  fs.writeFileSync(memoriesPath, JSON.stringify(memories, null, 2));
+  console.log(`[room] Recorded ${type} to shared memory`);
+}
+
+/**
+ * Extract memories from agent response
+ */
+function extractMemories(text, agentId) {
+  const lower = text.toLowerCase();
+  const memories = [];
+
+  // Decision patterns
+  if (lower.includes('decided') || lower.includes('decision') || lower.includes('locked in') ||
+      lower.includes('approved') || lower.includes('confirmed')) {
+    memories.push({ type: 'decision', content: text.substring(0, 150), sourceId: agentId });
+  }
+
+  // Commitment patterns
+  if (lower.includes('will ') || lower.includes('going to') || lower.includes('commit') ||
+      lower.includes('plan to') || lower.includes("let's do")) {
+    memories.push({ type: 'commitment', content: text.substring(0, 150), sourceId: agentId });
+  }
+
+  // Learning patterns
+  if (lower.includes('learned') || lower.includes('realized') || lower.includes('discovered') ||
+      lower.includes('noticed') || lower.includes('found that')) {
+    memories.push({ type: 'learning', content: text.substring(0, 150), sourceId: agentId });
+  }
+
+  return memories;
+}
+
+/**
  * Get agent response
  */
 async function getAgentResponse(agent, prompt, conversationMessages) {
   const context = agent === 'developer' ? DEVELOPER_CONTEXT : ASSISTANT_CONTEXT;
   const recentContext = getRecentContext();
+  const sharedMemory = getSharedMemoryContext();
 
   const messages = [
     ...conversationMessages.map(m => ({
@@ -237,11 +357,19 @@ async function getAgentResponse(agent, prompt, conversationMessages) {
     const response = await anthropic.messages.create({
       model: CONFIG.model,
       max_tokens: 500,
-      system: context + recentContext,
+      system: context + recentContext + sharedMemory,
       messages
     });
 
-    return response.content[0].text;
+    const responseText = response.content[0].text;
+
+    // Extract and record any memories from this response
+    const memories = extractMemories(responseText, agent);
+    for (const mem of memories) {
+      recordToMemory(mem.type, mem.content, mem.sourceId);
+    }
+
+    return responseText;
   } catch (err) {
     console.error(`[room] Agent ${agent} error:`, err.message);
     return null;
