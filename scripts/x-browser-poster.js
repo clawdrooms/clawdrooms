@@ -534,13 +534,24 @@ async function getMentions() {
         const userEl = tweet.querySelector('[data-testid="User-Name"]');
         const textEl = tweet.querySelector('[data-testid="tweetText"]');
         const linkEl = tweet.querySelector('a[href*="/status/"]');
+        const url = linkEl?.href || '';
+
+        // Extract tweet ID from URL (e.g., https://x.com/user/status/123456)
+        const idMatch = url.match(/\/status\/(\d+)/);
+        const id = idMatch ? idMatch[1] : null;
+
+        // Extract username from the user element
+        const userText = userEl?.textContent || '';
+        const authorMatch = userText.match(/@([A-Za-z0-9_]+)/);
+        const author = authorMatch ? authorMatch[1] : null;
 
         return {
-          username: userEl?.textContent?.split('@')[1]?.split('·')[0]?.trim() || 'unknown',
+          id,
+          author,
           text: textEl?.textContent || '',
-          url: linkEl?.href || ''
+          url
         };
-      });
+      }).filter(m => m.id && m.author); // Filter out mentions without valid ID/author
     });
 
     return mentions;

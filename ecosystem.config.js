@@ -66,6 +66,19 @@ module.exports = {
         NODE_ENV: 'production',
         SUSTAINABILITY_ENABLED: 'true'
       }
+    },
+    {
+      name: 'x-mention-monitor',
+      script: 'scripts/x-mention-monitor.js',
+      args: '--daemon',
+      cwd: '/root/clawdrooms',
+      instances: 1,
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '300M',
+      env: {
+        NODE_ENV: 'production'
+      }
     }
   ]
 };
