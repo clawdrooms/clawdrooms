@@ -355,12 +355,12 @@
           // Helper to check if content is just a label/noise
           const isLabelOrNoise = (text) => {
             if (!text) return true;
-            const trimmed = text.trim().toLowerCase();
+            const trimmed = text.trim();
             const noisePatterns = [
               /^(developer|assistant)[:.]?$/i,
-              /^\.{2,}$/,
-              /^\*[^*]+\*\s*\.{2,}$/,
-              /^[\s\*\.]+$/
+              /^[.…]{2,}$/,
+              /^\*[^*]+\*[\s.…]*$/,
+              /^[\s\*\.…]+$/
             ];
             return noisePatterns.some(p => p.test(trimmed)) || trimmed.length < 3;
           };

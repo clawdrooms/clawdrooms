@@ -789,13 +789,13 @@
     // Helper to check if content is just a label/noise (not real message content)
     function isLabelOrNoise(text) {
       if (!text) return true;
-      const trimmed = text.trim().toLowerCase();
+      const trimmed = text.trim();
       // Filter out standalone labels, ellipsis, and very short non-content
       const noisePatterns = [
         /^(developer|assistant)[:.]?$/i,  // Just "Developer" or "Assistant" with optional colon/period
-        /^\.{2,}$/,                         // Just dots/ellipsis
-        /^\*[^*]+\*\s*\.{2,}$/,            // Just "*action* ..." pattern
-        /^[\s\*\.]+$/                       // Just whitespace, asterisks, dots
+        /^[.…]{2,}$/,                       // Just dots/ellipsis (including unicode …)
+        /^\*[^*]+\*[\s.…]*$/,              // Just "*action*" with only dots/spaces/ellipsis after (no real content)
+        /^[\s\*\.…]+$/                      // Just whitespace, asterisks, dots, ellipsis
       ];
       return noisePatterns.some(p => p.test(trimmed)) || trimmed.length < 3;
     }
