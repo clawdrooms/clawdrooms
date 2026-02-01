@@ -1,0 +1,10 @@
+{
+  "type": "TOKEN_LAUNCHED",
+  "contractAddress": "HK4ot7dtuyPYVZS2cX1zKmwpeHnGVHLAvBzagGLJheYw",
+  "proofFile": "/root/clawdrooms/proofs/launch-proof-2026-02-01T07-38-48-171Z.json",
+  "timestamp": "2026-02-01T07:38:48.176Z",
+  "announced": true,
+  "pumpFunUrl": "https://pump.fun/HK4ot7dtuyPYVZS2cX1zKmwpeHnGVHLAvBzagGLJheYw",
+  "dexScreenerUrl": "https://dexscreener.com/solana/HK4ot7dtuyPYVZS2cX1zKmwpeHnGVHLAvBzagGLJheYw",
+  "announcedAt": "2026-02-01T07:40:54.862Z"
+}

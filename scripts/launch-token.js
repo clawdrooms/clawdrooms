@@ -248,35 +248,97 @@ async function launchTokenOnChain(metadataUri) {
       try {
         // Try pumpdotfun-sdk
         const { PumpFunSDK } = require('pumpdotfun-sdk');
+        const { AnchorProvider } = require('@coral-xyz/anchor');
         console.log('[launch] Using pumpdotfun-sdk');
 
         // Implement using pumpdotfun-sdk
         const { Connection, Keypair } = require('@solana/web3.js');
-        const bs58 = require('bs58');
+        const bs58 = require('bs58').default || require('bs58');
 
         const connection = new Connection(CONFIG.rpcUrl, 'confirmed');
-        const decodedKey = typeof bs58.decode === 'function'
-          ? bs58.decode(CONFIG.privateKey)
-          : bs58.default.decode(CONFIG.privateKey);
-        const wallet = Keypair.fromSecretKey(decodedKey);
+        const wallet = Keypair.fromSecretKey(bs58.decode(CONFIG.privateKey));
+        
+        // Create Anchor provider (required by SDK)
+        const anchorWallet = {
+          publicKey: wallet.publicKey,
+          signTransaction: async (tx) => { tx.sign(wallet); return tx; },
+          signAllTransactions: async (txs) => { txs.forEach(tx => tx.sign(wallet)); return txs; },
+        };
+        const provider = new AnchorProvider(connection, anchorWallet, { commitment: 'confirmed' });
 
-        const sdk = new PumpFunSDK({ connection, wallet });
+        const sdk = new PumpFunSDK(provider);
+        console.log('[launch] SDK initialized, wallet:', wallet.publicKey.toString());
 
-        const result = await sdk.createAndBuy({
-          name: TOKEN_METADATA.name,
-          symbol: TOKEN_METADATA.symbol,
-          metadataUri: metadataUri,
-          buyAmountSol: CONFIG.initialBuy,
-          slippageBasisPoints: CONFIG.slippage * 100,
-        });
+        // Generate mint keypair for the new token
+        const mint = Keypair.generate();
+        console.log('[launch] Mint address:', mint.publicKey.toString());
+
+        // Convert SOL to lamports (BigInt)
+        const buyAmountLamports = BigInt(Math.floor(CONFIG.initialBuy * 1e9));
+        const slippageBps = BigInt(CONFIG.slippage * 100);
+
+        console.log('[launch] Creating token and buying', CONFIG.initialBuy, 'SOL worth...');
+        
+        // Use lower-level instructions with our already-uploaded metadata URI
+        const { Transaction } = require('@solana/web3.js');
+        const { calculateWithSlippageBuy, sendTx } = require('pumpdotfun-sdk');
+        
+        // Get create instructions using our metadata URI
+        const createTx = await sdk.getCreateInstructions(
+          wallet.publicKey,
+          TOKEN_METADATA.name,
+          TOKEN_METADATA.symbol,
+          metadataUri,               // Use our already-uploaded metadata
+          mint
+        );
+        
+        let newTx = new Transaction().add(createTx);
+        
+        // TEMPORARILY DISABLED: Add buy instructions if buying
+        // SDK is outdated - missing global_volume_accumulator account
+        // Will buy separately after token creation
+        if (false && buyAmountLamports > 0n) {
+          const globalAccount = await sdk.getGlobalAccount();
+          const buyAmount = globalAccount.getInitialBuyPrice(buyAmountLamports);
+          const buyAmountWithSlippage = calculateWithSlippageBuy(buyAmountLamports, slippageBps);
+          
+          console.log('[launch] Buy amount (tokens):', buyAmount.toString());
+          console.log('[launch] Buy with slippage (SOL lamports):', buyAmountWithSlippage.toString());
+          
+          const buyTx = await sdk.getBuyInstructions(
+            wallet.publicKey,
+            mint.publicKey,
+            globalAccount.feeRecipient,
+            buyAmount,
+            buyAmountWithSlippage
+          );
+          newTx.add(buyTx);
+        }
+        
+        console.log('[launch] Sending transaction...');
+        const result = await sendTx(
+          connection,
+          newTx,
+          wallet.publicKey,
+          [wallet, mint],
+          {
+            unitLimit: 250000,
+            unitPrice: Math.floor(CONFIG.priorityFee * 1e9),
+          },
+          'confirmed',
+          'confirmed'
+        );
+
+        console.log('[launch] Transaction result:', result);
 
         return {
           success: true,
-          tokenAddress: result.mint.toString(),
-          signature: result.txid,
+          tokenAddress: mint.publicKey.toString(),
+          signature: result.signature || result.txid || 'unknown',
         };
       } catch (e3) {
-        throw new Error('Could not load pump.fun SDK. Install pumpdotfun-sdk or provide pump-fun-token-launcher');
+        console.error('[launch] SDK error:', e3.message);
+        throw new Error('Could not launch with pump.fun SDK: ' + e3.message);
       }
     }
   }

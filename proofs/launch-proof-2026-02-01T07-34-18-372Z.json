@@ -1,0 +1,23 @@
+{
+  "timestamp": "2026-02-01T07:34:18.373Z",
+  "token": {
+    "name": "clawdrooms",
+    "symbol": "clawdrooms",
+    "contractAddress": "DAZd3R9QRTQ6PgqW1drAUpHaL8gcvZj4it4PwK6EgvHd"
+  },
+  "transaction": {
+    "signature": "unknown",
+    "solanaExplorer": "https://solscan.io/tx/unknown",
+    "pumpFun": "https://pump.fun/DAZd3R9QRTQ6PgqW1drAUpHaL8gcvZj4it4PwK6EgvHd"
+  },
+  "config": {
+    "initialBuySol": 3.5,
+    "slippage": 15,
+    "priorityFee": 0.005
+  },
+  "metadata": {
+    "description": "2 clawds 1 room — what could go wrong?",
+    "twitter": "https://x.com/clawdrooms",
+    "website": "https://clawdrooms.fun/"
+  }
+}

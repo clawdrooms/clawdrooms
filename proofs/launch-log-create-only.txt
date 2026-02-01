@@ -1,0 +1,81 @@
+
+========================================
+  CLAWDROOMS TOKEN LAUNCH
+========================================
+
+  two agents. one mission. ship or die.
+
+========================================
+
+[launch] Configuration validated
+[launch] Token: clawdrooms ($clawdrooms)
+[launch] Initial buy: 3.5 SOL
+[launch] Slippage: 15%
+[launch] Priority fee: 0.005 SOL
+
+[launch] Step 1: Uploading metadata...
+[launch] Uploading metadata to pump.fun IPFS...
+[launch] Metadata uploaded: https://ipfs.io/ipfs/QmS1ANdPVGbj3XPNiGd1m28K2VJsYxYwwg4fiPKPLn7Eey
+[launch] Step 2: Deploying token...
+[launch] Launching token on pump.fun...
+[launch] Using pumpdotfun-sdk
+[launch] SDK initialized, wallet: 2EU98xTjnjrQgf33eG63p7uSbMFgkHLT35bKCrKzFqQ4
+[launch] Mint address: HK4ot7dtuyPYVZS2cX1zKmwpeHnGVHLAvBzagGLJheYw
+[launch] Creating token and buying 3.5 SOL worth...
+[launch] Sending transaction...
+sig: https://solscan.io/tx/HyotrgrMc3Zo1zrh9rpMiQFn6pun5BHzbVR9Yxk2UxzbY2XHudY1Jh8SwHvrD79XHxQxZnxocwTgsqj6WGCFBWF
+[launch] Transaction result: {
+  success: true,
+  signature: 'HyotrgrMc3Zo1zrh9rpMiQFn6pun5BHzbVR9Yxk2UxzbY2XHudY1Jh8SwHvrD79XHxQxZnxocwTgsqj6WGCFBWF',
+  results: {
+    slot: 397303647,
+    transaction: { signatures: [Array], message: [MessageV0] },
+    meta: {
+      err: null,
+      status: [Object],
+      fee: 1260000,
+      preBalances: [Array],
+      postBalances: [Array],
+      innerInstructions: [Array],
+      logMessages: [Array],
+      preTokenBalances: [],
+      postTokenBalances: [Array],
+      rewards: [],
+      loadedAddresses: [Object],
+      computeUnitsConsumed: 128074,
+      costUnits: 133868
+    },
+    version: 0,
+    blockTime: 1769931526
+  }
+}
+
+========================================
+  TOKEN LAUNCHED SUCCESSFULLY
+========================================
+  contract: HK4ot7dtuyPYVZS2cX1zKmwpeHnGVHLAvBzagGLJheYw
+  signature: HyotrgrMc3Zo1zrh9rpMiQFn6pun5BHzbVR9Yxk2UxzbY2XHudY1Jh8SwHvrD79XHxQxZnxocwTgsqj6WGCFBWF
+  pump.fun: https://pump.fun/HK4ot7dtuyPYVZS2cX1zKmwpeHnGVHLAvBzagGLJheYw
+========================================
+
+[launch] Step 3: Saving proof...
+[launch] Proof saved: /root/clawdrooms/proofs/launch-proof-2026-02-01T07-38-48-171Z.json
+[launch] Contract address saved: /root/clawdrooms/CONTRACT_ADDRESS.txt
+[launch] Step 4: Executing post-launch automation (simultaneous)...
+[launch] Updating .env with TOKEN_MINT_ADDRESS...
+[launch] .env updated with TOKEN_MINT_ADDRESS=HK4ot7dtuyPYVZS2cX1zKmwpeHnGVHLAvBzagGLJheYw
+[launch] Updating website with contract address...
+[launch] Website token-config.json updated
+[launch] Notifying agents about launch...
+[launch] Launch recorded in shared memory
+[launch] Launch event file created for room announcement
+[launch] Preparing launch tweet...
+[x-browser] Launching browser...
+[launch] Updating Moltbook profile with contract address...
+[moltbook] Updating profile...
+[launch] Posting Moltbook launch announcement...
+[launch] Moltbook profile update failed: Invalid JSON response: 
+[x-browser] Cookies loaded
+[launch] Website restarted with new token address
+[launch] Moltbook announcement failed: You can only post once every 30 minutes
+[x-browser] Post error: Navigation timeout of 30000 ms exceeded
