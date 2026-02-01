@@ -152,20 +152,35 @@ async function buyTokens(amountSOL) {
     // Try Jupiter first (works for Raydium/PumpSwap graduated tokens)
     console.log('[buy] Using Jupiter API for swap...');
 
-    // Get quote from Jupiter - only use Raydium routes (exclude Pump/PumpSwap which use bonding curve)
-    const quoteUrl = `https://quote-api.jup.ag/v6/quote?inputMint=${SOL_MINT}&outputMint=${CONTRACT_ADDRESS}&amount=${amountLamports}&slippageBps=1500&onlyDirectRoutes=true&excludeDexes=Pump,Pump%20AMM`;
-    console.log('[buy] Getting quote (Raydium only, excluding Pump routes)...');
+    // Get quote from Jupiter - try without exclusions first to see available routes
+    const quoteUrl = `https://quote-api.jup.ag/v6/quote?inputMint=${SOL_MINT}&outputMint=${CONTRACT_ADDRESS}&amount=${amountLamports}&slippageBps=2000`;
+    console.log('[buy] Getting quote from Jupiter...');
 
     const quoteResponse = await fetch(quoteUrl);
+    const quoteText = await quoteResponse.text();
+
     if (!quoteResponse.ok) {
-      const error = await quoteResponse.text();
-      throw new Error(`Jupiter quote error: ${error}`);
+      console.log('[buy] Jupiter quote response:', quoteText);
+      throw new Error(`Jupiter quote error: ${quoteText}`);
     }
 
-    const quoteData = await quoteResponse.json();
+    let quoteData;
+    try {
+      quoteData = JSON.parse(quoteText);
+    } catch (e) {
+      console.log('[buy] Failed to parse Jupiter response:', quoteText);
+      throw new Error('Invalid Jupiter response');
+    }
 
     if (!quoteData || quoteData.error) {
+      console.log('[buy] Jupiter quote data:', JSON.stringify(quoteData, null, 2));
       throw new Error(`Jupiter quote failed: ${quoteData?.error || 'No route found'}`);
+    }
+
+    // Log the route info
+    if (quoteData.routePlan) {
+      const dexes = quoteData.routePlan.map(r => r.swapInfo?.label || 'unknown').join(' -> ');
+      console.log(`[buy] Route: ${dexes}`);
     }
 
     console.log(`[buy] Quote received: ~${(Number(quoteData.outAmount) / 1e6).toFixed(2)} tokens expected`);
