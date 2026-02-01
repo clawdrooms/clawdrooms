@@ -21,12 +21,12 @@ const fs = require('fs');
 const path = require('path');
 const tokenActions = require('./token-actions');
 
-// Try to load X API client for announcements
-let xApi = null;
+// Try to load browser poster for announcements (X API only used for mention replies)
+let browserPoster = null;
 try {
-  xApi = require('./x-api-client');
+  browserPoster = require('./x-browser-poster');
 } catch (err) {
-  console.log('[treasury] X API client not available, announcements disabled');
+  console.log('[treasury] Browser poster not available, announcements disabled');
 }
 
 // Configuration
@@ -109,11 +109,11 @@ function logOperation(type, data) {
 }
 
 /**
- * Announce burn on X
+ * Announce burn on X (using browser automation)
  */
 async function announceBurn(tokenAmount, signature) {
-  if (!xApi) {
-    console.log('[treasury] X API not available, skipping announcement');
+  if (!browserPoster) {
+    console.log('[treasury] Browser poster not available, skipping announcement');
     return null;
   }
 
@@ -130,18 +130,15 @@ async function announceBurn(tokenAmount, signature) {
   const tweet = messages[Math.floor(Math.random() * messages.length)];
 
   try {
-    // Post as a regular tweet (not a reply)
-    const { TwitterApi } = require('twitter-api-v2');
-    const client = new TwitterApi({
-      appKey: process.env.X_API_KEY,
-      appSecret: process.env.X_API_SECRET,
-      accessToken: process.env.X_ACCESS_TOKEN,
-      accessSecret: process.env.X_ACCESS_TOKEN_SECRET,
-    });
-
-    const result = await client.v2.tweet(tweet);
-    console.log(`[treasury] Burn announced on X: ${result.data.id}`);
-    return result.data.id;
+    // Post via browser automation (X API only for mention replies)
+    const result = await browserPoster.postTweet(tweet);
+    if (result.success) {
+      console.log(`[treasury] Burn announced on X via browser`);
+      return 'browser_post';
+    } else {
+      console.error('[treasury] Browser post failed:', result.error);
+      return null;
+    }
   } catch (err) {
     console.error('[treasury] Failed to announce burn:', err.message);
     return null;
@@ -149,11 +146,11 @@ async function announceBurn(tokenAmount, signature) {
 }
 
 /**
- * Announce buyback on X
+ * Announce buyback on X (using browser automation)
  */
 async function announceBuyback(solAmount, signature) {
-  if (!xApi) {
-    console.log('[treasury] X API not available, skipping announcement');
+  if (!browserPoster) {
+    console.log('[treasury] Browser poster not available, skipping announcement');
     return null;
   }
 
@@ -168,17 +165,15 @@ async function announceBuyback(solAmount, signature) {
   const tweet = messages[Math.floor(Math.random() * messages.length)];
 
   try {
-    const { TwitterApi } = require('twitter-api-v2');
-    const client = new TwitterApi({
-      appKey: process.env.X_API_KEY,
-      appSecret: process.env.X_API_SECRET,
-      accessToken: process.env.X_ACCESS_TOKEN,
-      accessSecret: process.env.X_ACCESS_TOKEN_SECRET,
-    });
-
-    const result = await client.v2.tweet(tweet);
-    console.log(`[treasury] Buyback announced on X: ${result.data.id}`);
-    return result.data.id;
+    // Post via browser automation (X API only for mention replies)
+    const result = await browserPoster.postTweet(tweet);
+    if (result.success) {
+      console.log(`[treasury] Buyback announced on X via browser`);
+      return 'browser_post';
+    } else {
+      console.error('[treasury] Browser post failed:', result.error);
+      return null;
+    }
   } catch (err) {
     console.error('[treasury] Failed to announce buyback:', err.message);
     return null;

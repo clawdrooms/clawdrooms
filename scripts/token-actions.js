@@ -129,7 +129,8 @@ async function getTokenBalance() {
 }
 
 /**
- * Buy tokens via pump.fun
+ * Buy tokens via Jupiter API (for tokens on Raydium/PumpSwap)
+ * Falls back to pump.fun for tokens still on bonding curve
  */
 async function buyTokens(amountSOL) {
   if (!CONTRACT_ADDRESS) {
@@ -143,30 +144,59 @@ async function buyTokens(amountSOL) {
   console.log(`[buy] Wallet: ${keypair.publicKey.toString()}`);
   console.log(`[buy] Token: ${CONTRACT_ADDRESS}`);
 
+  // SOL mint address (wrapped SOL)
+  const SOL_MINT = 'So11111111111111111111111111111111111111112';
+  const amountLamports = Math.floor(amountSOL * LAMPORTS_PER_SOL);
+
   try {
-    // Use pump.fun trade API
-    const response = await fetch('https://pumpportal.fun/api/trade-local', {
+    // Try Jupiter first (works for Raydium/PumpSwap graduated tokens)
+    console.log('[buy] Using Jupiter API for swap...');
+
+    // Get quote from Jupiter - only use Raydium routes (exclude Pump/PumpSwap which use bonding curve)
+    const quoteUrl = `https://quote-api.jup.ag/v6/quote?inputMint=${SOL_MINT}&outputMint=${CONTRACT_ADDRESS}&amount=${amountLamports}&slippageBps=1500&onlyDirectRoutes=true&excludeDexes=Pump,Pump%20AMM`;
+    console.log('[buy] Getting quote (Raydium only, excluding Pump routes)...');
+
+    const quoteResponse = await fetch(quoteUrl);
+    if (!quoteResponse.ok) {
+      const error = await quoteResponse.text();
+      throw new Error(`Jupiter quote error: ${error}`);
+    }
+
+    const quoteData = await quoteResponse.json();
+
+    if (!quoteData || quoteData.error) {
+      throw new Error(`Jupiter quote failed: ${quoteData?.error || 'No route found'}`);
+    }
+
+    console.log(`[buy] Quote received: ~${(Number(quoteData.outAmount) / 1e6).toFixed(2)} tokens expected`);
+
+    // Get swap transaction from Jupiter
+    const swapResponse = await fetch('https://quote-api.jup.ag/v6/swap', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        publicKey: keypair.publicKey.toString(),
-        action: 'buy',
-        mint: CONTRACT_ADDRESS,
-        denominatedInSol: 'true',
-        amount: amountSOL,
-        slippage: 15,
-        priorityFee: 0.0005,
-        pool: 'pump',
+        quoteResponse: quoteData,
+        userPublicKey: keypair.publicKey.toString(),
+        wrapAndUnwrapSol: true,
+        dynamicComputeUnitLimit: true,
+        prioritizationFeeLamports: 500000, // 0.0005 SOL priority fee
       }),
     });
 
-    if (response.status !== 200) {
-      const error = await response.text();
-      throw new Error(`Pump.fun API error: ${error}`);
+    if (!swapResponse.ok) {
+      const error = await swapResponse.text();
+      throw new Error(`Jupiter swap error: ${error}`);
     }
 
-    const data = await response.arrayBuffer();
-    const tx = VersionedTransaction.deserialize(new Uint8Array(data));
+    const swapData = await swapResponse.json();
+
+    if (!swapData.swapTransaction) {
+      throw new Error('Jupiter did not return swap transaction');
+    }
+
+    // Deserialize and sign the transaction
+    const swapTransactionBuf = Buffer.from(swapData.swapTransaction, 'base64');
+    const tx = VersionedTransaction.deserialize(swapTransactionBuf);
     tx.sign([keypair]);
 
     console.log('[buy] Transaction signed, sending...');
@@ -194,11 +224,65 @@ async function buyTokens(amountSOL) {
       signature,
       mint: CONTRACT_ADDRESS,
       wallet: keypair.publicKey.toString(),
-      solscan: `https://solscan.io/tx/${signature}`
+      solscan: `https://solscan.io/tx/${signature}`,
+      method: 'jupiter'
     });
 
     return { success: true, signature, proofFile };
   } catch (err) {
+    // If Jupiter fails, try pump.fun as fallback (for tokens still on bonding curve)
+    if (!err.message.includes('bonding curve')) {
+      console.log('[buy] Jupiter failed, trying pump.fun fallback...');
+
+      try {
+        const response = await fetch('https://pumpportal.fun/api/trade-local', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            publicKey: keypair.publicKey.toString(),
+            action: 'buy',
+            mint: CONTRACT_ADDRESS,
+            denominatedInSol: 'true',
+            amount: amountSOL,
+            slippage: 15,
+            priorityFee: 0.0005,
+            pool: 'pump',
+          }),
+        });
+
+        if (response.status === 200) {
+          const data = await response.arrayBuffer();
+          const tx = VersionedTransaction.deserialize(new Uint8Array(data));
+          tx.sign([keypair]);
+
+          const signature = await connection.sendTransaction(tx, {
+            skipPreflight: false,
+            maxRetries: 3,
+          });
+
+          const confirmation = await connection.confirmTransaction(signature, 'confirmed');
+
+          if (!confirmation.value.err) {
+            console.log('[buy] Transaction confirmed via pump.fun!');
+            console.log(`[buy] Solscan: https://solscan.io/tx/${signature}`);
+
+            const proofFile = saveProof('buy', {
+              amountSOL,
+              signature,
+              mint: CONTRACT_ADDRESS,
+              wallet: keypair.publicKey.toString(),
+              solscan: `https://solscan.io/tx/${signature}`,
+              method: 'pumpfun'
+            });
+
+            return { success: true, signature, proofFile };
+          }
+        }
+      } catch (pumpErr) {
+        console.log('[buy] Pump.fun fallback also failed:', pumpErr.message);
+      }
+    }
+
     console.error('[buy] Error:', err.message);
     return { success: false, error: err.message };
   }
