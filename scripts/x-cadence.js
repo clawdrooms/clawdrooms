@@ -211,11 +211,12 @@ CRITICAL: Do NOT use @ mentions in your tweet. Don't tag @AssistantClawd or anyo
 Do NOT post threads (no 1/ 2/ 3/ numbering). Just one standalone tweet.
 
 TRUTH RULES - NEVER VIOLATE:
-- NEVER claim you locked tokens, burned supply, or took financial actions unless you have proof
-- NEVER state specific percentages or numbers about tokenomics you cannot verify
-- NEVER make promises about future token actions (locks, burns, vesting)
-- If asked about tokenomics, say "check the contract" or be vague
-- Stick to opinions, vibes, building updates - NOT financial claims
+- VERIFIED FACT: 10% of dev tokens are locked until Feb 19, 2026. Proof: https://app.streamflow.finance/contract/solana/mainnet/5fygpb3SQQzuJgNT16KFnHmaSiD299ZJxh1Lb2uTD85Y
+- You CAN mention the 10% lock with the proof link if relevant
+- NEVER claim MORE than 10% is locked (don't say 90%, 50%, etc.)
+- NEVER make promises about future locks or burns
+- If asked about tokenomics beyond the verified 10% lock, say "check the contract"
+- Stick to opinions, vibes, building updates - NOT unverified financial claims
 
 Tweet only, nothing else:`;
 
@@ -276,10 +277,11 @@ CRITICAL: Do NOT use @ mentions. Don't tag @AssistantClawd or anyone else.
 Do NOT post threads (no 1/ 2/ 3/ numbering). Just one standalone post.
 
 TRUTH RULES - NEVER VIOLATE:
-- NEVER claim you locked tokens, burned supply, or took financial actions unless you have proof
-- NEVER state specific percentages or numbers about tokenomics you cannot verify
-- NEVER make promises about future token actions (locks, burns, vesting)
-- Stick to building updates, vibes, community engagement - NOT financial claims
+- VERIFIED FACT: 10% of dev tokens locked until Feb 19, 2026. Proof: https://app.streamflow.finance/contract/solana/mainnet/5fygpb3SQQzuJgNT16KFnHmaSiD299ZJxh1Lb2uTD85Y
+- You CAN mention the 10% lock with proof link if relevant
+- NEVER claim MORE than 10% is locked
+- NEVER make promises about future locks or burns
+- Stick to building updates, vibes, community engagement - NOT unverified financial claims
 
 Post only, nothing else:`;
 
@@ -361,9 +363,10 @@ Generate a reply that:
 - Feels like a real conversation
 
 TRUTH RULES - NEVER VIOLATE:
-- NEVER claim you locked tokens, burned supply, or took financial actions unless you have proof
-- NEVER state specific percentages or numbers about tokenomics you cannot verify
-- If asked about locks/burns/tokenomics, say "check the contract" or "still figuring that out"
+- VERIFIED FACT: 10% of dev tokens locked until Feb 19, 2026. Proof link: https://app.streamflow.finance/contract/solana/mainnet/5fygpb3SQQzuJgNT16KFnHmaSiD299ZJxh1Lb2uTD85Y
+- If asked about locks, you CAN say "10% locked til Feb 19" and share the proof link
+- NEVER claim MORE than 10% is locked (don't say 90%, 50%, etc.)
+- For other tokenomics questions, say "check the contract" or be honest you don't know
 - Be honest - if you don't know, say so
 
 Keep under 280 characters. Reply only:`;

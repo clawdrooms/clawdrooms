@@ -26,10 +26,113 @@ let page = null;
 let isLoggedIn = false;
 
 /**
+ * Mutex lock to prevent concurrent browser operations
+ */
+let operationLock = false;
+let lockQueue = [];
+
+async function acquireLock(operationName) {
+  if (!operationLock) {
+    operationLock = true;
+    console.log(`[x-browser] ${operationName} acquired lock`);
+    return;
+  }
+
+  // Wait in queue
+  console.log(`[x-browser] ${operationName} waiting for lock...`);
+  return new Promise(resolve => {
+    lockQueue.push(() => {
+      console.log(`[x-browser] ${operationName} acquired lock from queue`);
+      resolve();
+    });
+  });
+}
+
+function releaseLock() {
+  if (lockQueue.length > 0) {
+    const next = lockQueue.shift();
+    next();
+  } else {
+    operationLock = false;
+  }
+}
+
+/**
  * Random delay to mimic human behavior
  */
 function randomDelay(min = 500, max = 2000) {
   return new Promise(r => setTimeout(r, Math.floor(Math.random() * (max - min) + min)));
+}
+
+/**
+ * Track last error time for cooldown
+ */
+let lastErrorTime = 0;
+const ERROR_COOLDOWN_MS = 30000; // 30 second cooldown after errors
+let consecutiveErrors = 0;
+
+/**
+ * Retry wrapper with exponential backoff and mutex lock
+ */
+async function withRetry(fn, maxRetries = 3, baseDelay = 5000, operationName = 'operation') {
+  await acquireLock(operationName);
+
+  try {
+    // Check cooldown
+    const timeSinceError = Date.now() - lastErrorTime;
+    if (timeSinceError < ERROR_COOLDOWN_MS && consecutiveErrors > 0) {
+      const waitTime = ERROR_COOLDOWN_MS - timeSinceError;
+      console.log(`[x-browser] Cooling down for ${Math.round(waitTime/1000)}s after ${consecutiveErrors} errors`);
+      await new Promise(r => setTimeout(r, waitTime));
+    }
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const result = await fn();
+        consecutiveErrors = 0; // Reset on success
+        return result;
+      } catch (err) {
+        lastErrorTime = Date.now();
+        consecutiveErrors++;
+        console.error(`[x-browser] Attempt ${attempt}/${maxRetries} failed:`, err.message);
+
+        if (attempt === maxRetries) {
+          throw err;
+        }
+
+        // Exponential backoff with jitter
+        const delay = baseDelay * Math.pow(2, attempt - 1) + Math.random() * 2000;
+        console.log(`[x-browser] Retrying in ${Math.round(delay/1000)}s...`);
+        await new Promise(r => setTimeout(r, delay));
+
+        // Full browser reset before retry
+        await hardResetBrowser();
+      }
+    }
+  } finally {
+    releaseLock();
+  }
+}
+
+/**
+ * Hard reset - completely destroy and recreate browser
+ */
+async function hardResetBrowser() {
+  console.log('[x-browser] Hard reset - destroying browser...');
+  try {
+    if (page) {
+      await page.close().catch(() => {});
+    }
+    if (browser) {
+      await browser.close().catch(() => {});
+    }
+  } catch (e) {}
+  browser = null;
+  page = null;
+  isLoggedIn = false;
+
+  // Wait before recreating
+  await new Promise(r => setTimeout(r, 2000));
 }
 
 /**
@@ -115,23 +218,36 @@ async function login(page) {
 
   console.log('[x-browser] Logging in...');
 
-  await page.goto('https://x.com/login', { waitUntil: 'networkidle2' });
-  await randomDelay(2000, 3000);
+  await page.goto('https://x.com/login', { waitUntil: 'networkidle2', timeout: 60000 });
+  await randomDelay(3000, 5000);
+
+  // Take screenshot of login page for debugging
+  try {
+    await page.screenshot({ path: path.join(DATA_DIR, `x-login-${Date.now()}.png`) });
+  } catch (e) {}
 
   // Enter username
   await humanType(page, 'input[autocomplete="username"]', username);
-  await randomDelay(500, 1000);
+  await randomDelay(1000, 1500);
 
-  // Click next
-  await page.click('button[role="button"]:has-text("Next")').catch(() => {
-    return page.evaluate(() => {
+  // Click next - try multiple methods
+  console.log('[x-browser] Clicking Next button...');
+  try {
+    await page.click('button[role="button"]:has-text("Next")');
+  } catch (e) {
+    await page.evaluate(() => {
       const buttons = [...document.querySelectorAll('button')];
       const next = buttons.find(b => b.textContent.includes('Next'));
       if (next) next.click();
     });
-  });
+  }
 
-  await randomDelay(2000, 3000);
+  await randomDelay(3000, 5000);
+
+  // Take screenshot after clicking Next
+  try {
+    await page.screenshot({ path: path.join(DATA_DIR, `x-login-after-next-${Date.now()}.png`) });
+  } catch (e) {}
 
   // Check for email verification prompt
   const emailInput = await page.$('input[data-testid="ocfEnterTextTextInput"]');
@@ -144,21 +260,33 @@ async function login(page) {
       const next = buttons.find(b => b.textContent.includes('Next'));
       if (next) next.click();
     });
-    await randomDelay(2000, 3000);
+    await randomDelay(3000, 5000);
+  }
+
+  // Wait for password field with longer timeout
+  console.log('[x-browser] Waiting for password field...');
+  try {
+    await page.waitForSelector('input[name="password"]', { timeout: 30000 });
+  } catch (e) {
+    // Take screenshot if password field not found
+    console.error('[x-browser] Password field not found, taking screenshot...');
+    await page.screenshot({ path: path.join(DATA_DIR, `x-login-no-password-${Date.now()}.png`) });
+    throw new Error('Password field not found - X may be showing a challenge');
   }
 
   // Enter password
   await humanType(page, 'input[name="password"]', password);
-  await randomDelay(500, 1000);
+  await randomDelay(1000, 1500);
 
   // Click login
+  console.log('[x-browser] Clicking Log in button...');
   await page.evaluate(() => {
     const buttons = [...document.querySelectorAll('button')];
     const login = buttons.find(b => b.textContent.includes('Log in'));
     if (login) login.click();
   });
 
-  await randomDelay(3000, 5000);
+  await randomDelay(5000, 8000);
 
   // Verify login
   const loggedIn = await page.evaluate(() => {
@@ -172,6 +300,8 @@ async function login(page) {
     return true;
   }
 
+  // Take screenshot of failed login state
+  await page.screenshot({ path: path.join(DATA_DIR, `x-login-failed-${Date.now()}.png`) });
   throw new Error('Login failed - could not verify');
 }
 
@@ -193,9 +323,9 @@ async function checkLogin(page) {
  * Post a tweet
  */
 async function postTweet(text) {
-  const { browser, page } = await initBrowser();
+  return withRetry(async () => {
+    const { browser, page } = await initBrowser();
 
-  try {
     // Check if we need to login
     if (!isLoggedIn) {
       const alreadyLoggedIn = await checkLogin(page);
@@ -206,17 +336,20 @@ async function postTweet(text) {
       }
     }
 
-    // Go to home
-    await page.goto('https://x.com/home', { waitUntil: 'networkidle2' });
+    // Go to home with longer timeout
+    await page.goto('https://x.com/home', {
+      waitUntil: 'networkidle2',
+      timeout: 60000
+    });
     await randomDelay(2000, 3000);
 
     // Click compose tweet
-    await page.waitForSelector('[data-testid="SideNav_NewTweet_Button"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="SideNav_NewTweet_Button"]', { timeout: 15000 });
     await page.click('[data-testid="SideNav_NewTweet_Button"]');
     await randomDelay(1000, 2000);
 
     // Type tweet
-    await page.waitForSelector('[data-testid="tweetTextarea_0"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="tweetTextarea_0"]', { timeout: 15000 });
     await humanType(page, '[data-testid="tweetTextarea_0"]', text);
     await randomDelay(1000, 2000);
 
@@ -230,24 +363,36 @@ async function postTweet(text) {
     await saveCookies(page);
 
     return { success: true, text };
-  } catch (err) {
-    console.error('[x-browser] Post error:', err.message);
+  }, 3, 5000, 'postTweet').catch(async err => {
+    console.error('[x-browser] Post failed after retries:', err.message);
 
     // Screenshot for debugging
-    const screenshotPath = path.join(DATA_DIR, `x-error-${Date.now()}.png`);
-    await page.screenshot({ path: screenshotPath });
+    try {
+      const { page } = await initBrowser().catch(() => ({}));
+      if (page) {
+        const screenshotPath = path.join(DATA_DIR, `x-error-${Date.now()}.png`);
+        await page.screenshot({ path: screenshotPath });
+      }
+    } catch (e) {}
 
     return { success: false, error: err.message };
-  }
+  });
+}
+
+/**
+ * Reset browser on error (alias for hardResetBrowser)
+ */
+async function resetBrowser() {
+  return hardResetBrowser();
 }
 
 /**
  * Reply to a tweet
  */
 async function replyToTweet(tweetUrl, text) {
-  const { browser, page } = await initBrowser();
+  return withRetry(async () => {
+    const { browser, page } = await initBrowser();
 
-  try {
     if (!isLoggedIn) {
       const alreadyLoggedIn = await checkLogin(page);
       if (!alreadyLoggedIn) {
@@ -257,17 +402,20 @@ async function replyToTweet(tweetUrl, text) {
       }
     }
 
-    // Navigate to tweet
-    await page.goto(tweetUrl, { waitUntil: 'networkidle2' });
+    // Navigate to tweet with longer timeout
+    await page.goto(tweetUrl, {
+      waitUntil: 'networkidle2',
+      timeout: 60000
+    });
     await randomDelay(2000, 3000);
 
     // Click reply button
-    await page.waitForSelector('[data-testid="reply"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="reply"]', { timeout: 15000 });
     await page.click('[data-testid="reply"]');
     await randomDelay(1000, 2000);
 
     // Type reply
-    await page.waitForSelector('[data-testid="tweetTextarea_0"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="tweetTextarea_0"]', { timeout: 15000 });
     await humanType(page, '[data-testid="tweetTextarea_0"]', text);
     await randomDelay(1000, 2000);
 
@@ -279,22 +427,27 @@ async function replyToTweet(tweetUrl, text) {
     await saveCookies(page);
 
     return { success: true, text, tweetUrl };
-  } catch (err) {
-    console.error('[x-browser] Reply error:', err.message);
-    const screenshotPath = path.join(DATA_DIR, `x-error-${Date.now()}.png`);
-    await page.screenshot({ path: screenshotPath });
+  }, 3, 5000, 'replyToTweet').catch(async err => {
+    console.error('[x-browser] Reply failed after retries:', err.message);
+    try {
+      const { page } = await initBrowser().catch(() => ({}));
+      if (page) {
+        const screenshotPath = path.join(DATA_DIR, `x-error-${Date.now()}.png`);
+        await page.screenshot({ path: screenshotPath });
+      }
+    } catch (e) {}
 
     return { success: false, error: err.message };
-  }
+  });
 }
 
 /**
  * Get mentions (scrape notifications)
  */
 async function getMentions() {
-  const { browser, page } = await initBrowser();
+  return withRetry(async () => {
+    const { browser, page } = await initBrowser();
 
-  try {
     if (!isLoggedIn) {
       const alreadyLoggedIn = await checkLogin(page);
       if (!alreadyLoggedIn) {
@@ -304,7 +457,11 @@ async function getMentions() {
       }
     }
 
-    await page.goto('https://x.com/notifications/mentions', { waitUntil: 'networkidle2' });
+    // Longer timeout for potentially slow X responses
+    await page.goto('https://x.com/notifications/mentions', {
+      waitUntil: 'networkidle2',
+      timeout: 60000
+    });
     await randomDelay(3000, 5000);
 
     const mentions = await page.evaluate(() => {
@@ -323,10 +480,10 @@ async function getMentions() {
     });
 
     return mentions;
-  } catch (err) {
-    console.error('[x-browser] Get mentions error:', err.message);
+  }, 3, 5000, 'getMentions').catch(err => {
+    console.error('[x-browser] Get mentions failed after retries:', err.message);
     return [];
-  }
+  });
 }
 
 /**
