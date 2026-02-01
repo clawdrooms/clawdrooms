@@ -36,6 +36,15 @@ try {
   console.log('[room] KOL research not available:', err.message);
 }
 
+// Load GitHub awareness for shipping context
+let githubAwareness = null;
+try {
+  githubAwareness = require('./github-awareness');
+  console.log('[room] GitHub awareness loaded');
+} catch (err) {
+  console.log('[room] GitHub awareness not available:', err.message);
+}
+
 // Configuration
 const CONFIG = {
   conversationInterval: 5 * 60 * 1000, // 5 minutes between room conversations
@@ -271,6 +280,18 @@ function getSharedMemoryContext() {
     const tierA = kolResearch.topKols.filter(k => k.tier === 'A').slice(0, 3);
     if (tierA.length > 0) {
       context += '\n\nTOP KOLs TO ENGAGE: ' + tierA.map(k => k.handle).join(', ');
+    }
+  }
+
+  // Add GitHub context (recent commits, shipping activity)
+  if (githubAwareness) {
+    try {
+      const githubContext = githubAwareness.getGitHubContext();
+      if (githubContext) {
+        context += githubContext;
+      }
+    } catch (e) {
+      console.error('[room] Failed to get GitHub context:', e.message);
     }
   }
 
