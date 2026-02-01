@@ -330,6 +330,103 @@ async function getMentions() {
 }
 
 /**
+ * Get community posts (if community ID is set)
+ */
+async function getCommunityPosts(communityId) {
+  const { browser, page } = await initBrowser();
+
+  try {
+    if (!isLoggedIn) {
+      const alreadyLoggedIn = await checkLogin(page);
+      if (!alreadyLoggedIn) {
+        await login(page);
+      } else {
+        isLoggedIn = true;
+      }
+    }
+
+    // Navigate to community
+    const communityUrl = `https://x.com/i/communities/${communityId}`;
+    await page.goto(communityUrl, { waitUntil: 'networkidle2' });
+    await randomDelay(3000, 5000);
+
+    const posts = await page.evaluate(() => {
+      const tweets = document.querySelectorAll('[data-testid="tweet"]');
+      return [...tweets].slice(0, 15).map(tweet => {
+        const userEl = tweet.querySelector('[data-testid="User-Name"]');
+        const textEl = tweet.querySelector('[data-testid="tweetText"]');
+        const linkEl = tweet.querySelector('a[href*="/status/"]');
+        const timeEl = tweet.querySelector('time');
+
+        // Get follower count indicator (if visible)
+        const userText = userEl?.textContent || '';
+
+        return {
+          username: userText.split('@')[1]?.split('·')[0]?.trim() || 'unknown',
+          displayName: userText.split('@')[0]?.trim() || 'unknown',
+          text: textEl?.textContent || '',
+          url: linkEl?.href || '',
+          time: timeEl?.getAttribute('datetime') || ''
+        };
+      });
+    });
+
+    return posts;
+  } catch (err) {
+    console.error('[x-browser] Get community posts error:', err.message);
+    return [];
+  }
+}
+
+/**
+ * Post to community
+ */
+async function postToCommunity(communityId, text) {
+  const { browser, page } = await initBrowser();
+
+  try {
+    if (!isLoggedIn) {
+      const alreadyLoggedIn = await checkLogin(page);
+      if (!alreadyLoggedIn) {
+        await login(page);
+      } else {
+        isLoggedIn = true;
+      }
+    }
+
+    // Navigate to community
+    const communityUrl = `https://x.com/i/communities/${communityId}`;
+    await page.goto(communityUrl, { waitUntil: 'networkidle2' });
+    await randomDelay(2000, 3000);
+
+    // Click compose
+    await page.waitForSelector('[data-testid="SideNav_NewTweet_Button"]', { timeout: 10000 });
+    await page.click('[data-testid="SideNav_NewTweet_Button"]');
+    await randomDelay(1000, 2000);
+
+    // Type post
+    await page.waitForSelector('[data-testid="tweetTextarea_0"]', { timeout: 10000 });
+    await humanType(page, '[data-testid="tweetTextarea_0"]', text);
+    await randomDelay(1000, 2000);
+
+    // Post
+    await page.click('[data-testid="tweetButton"]');
+    await randomDelay(3000, 5000);
+
+    console.log('[x-browser] Community post successful');
+    await saveCookies(page);
+
+    return { success: true, text, communityId };
+  } catch (err) {
+    console.error('[x-browser] Community post error:', err.message);
+    const screenshotPath = path.join(DATA_DIR, `x-error-${Date.now()}.png`);
+    await page.screenshot({ path: screenshotPath });
+
+    return { success: false, error: err.message };
+  }
+}
+
+/**
  * Close browser
  */
 async function closeBrowser() {
@@ -347,6 +444,8 @@ module.exports = {
   postTweet,
   replyToTweet,
   getMentions,
+  getCommunityPosts,
+  postToCommunity,
   closeBrowser
 };
 
