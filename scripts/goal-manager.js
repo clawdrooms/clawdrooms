@@ -590,6 +590,8 @@ function processAgentResponse(text, agentId) {
   }
 
   return {
+    goals: extractedGoals,
+    commitments: extractedCommitments,
     goalsExtracted: extractedGoals.length,
     commitmentsExtracted: extractedCommitments.length
   };
