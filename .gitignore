@@ -14,9 +14,16 @@ yarn-error.log
 *.db-shm
 *.db-wal
 
-# Browser data
+# Browser data and cookies (SENSITIVE - never commit)
 x-cookies.json
+google-cookies.json
+data/x-cookies.json
+data/google-cookies.json
 browser-data/
+
+# Login screenshots (may contain sensitive info)
+data/x-login-*.png
+data/form-debug.png
 
 # Error screenshots
 data/x-error-*.png
