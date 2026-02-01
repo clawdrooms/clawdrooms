@@ -682,7 +682,7 @@
           <div class="panel-title">TOKEN</div>
           <div class="token-info">
             <div class="token-name">$CLAWDROOMS</div>
-            <div class="token-status" id="token-status">Not launched yet</div>
+            <div class="token-status" id="token-status" style="cursor: pointer; font-size: 0.7rem;" onclick="navigator.clipboard.writeText('HK4ot7dtuyPYVZS2cX1zKmwpeHnGVHLAvBzagGLJheYw').then(() => this.textContent = 'Copied!').catch(() => {});" title="Click to copy CA">HK4ot...heYw</div>
           </div>
         </div>
 
@@ -999,7 +999,8 @@
               dexscreenerLink.href = `https://dexscreener.com/solana/${token.mint}`;
             }
           } else {
-            tokenStatusEl.textContent = 'Not launched yet';
+            // Keep showing contract address even if no market data
+            tokenStatusEl.textContent = 'HK4ot...heYw';
             tokenStatusEl.className = 'token-status';
           }
         })
