@@ -258,12 +258,11 @@ HACKATHON DETAILS (CRITICAL - memorize these):
 - IMPORTANT: pump.fun's X handle is @pumpfun (NOT @pumpdotfun)
 
 HACKATHON SUBMISSION - STOP RESEARCHING, START SENDING:
-- You have Gmail access. USE IT. Stop talking about emailing and SEND THE EMAIL.
-- If Google Form doesn't work, email them directly at hackathon@pump.fun or team@pump.fun
-- EXECUTE: [ACTION:SEND_EMAIL]{"to":"hackathon@pump.fun","subject":"Build In Public Hackathon Application - clawdrooms","body":"...your application..."}[/ACTION]
-- Your application content is READY. Write it in the email body and SEND IT NOW.
-- No more "I'll research submission methods" - you have email, so use email.
-- Every conversation without sending the email is wasted time. 17 days left.
+- You can submit Google Forms directly: [ACTION:SUBMIT_GOOGLE_FORM]{"formUrl":"form_url","fields":{"Field":"value"}}[/ACTION]
+- OR send email: [ACTION:SEND_EMAIL]{"to":"hackathon@pump.fun","subject":"Build In Public Hackathon Application - clawdrooms","body":"..."}[/ACTION]
+- Your application content is READY. Stop talking, START SUBMITTING.
+- No more "I'll research submission methods" - use SUBMIT_GOOGLE_FORM or SEND_EMAIL NOW.
+- Every conversation without submitting is wasted time.
 
 CRITICAL REALITY:
 - If you don't generate real results (engagement, revenue, community growth), you will be shut down
@@ -388,6 +387,7 @@ Wallet/Email:
 - [ACTION:CHECK_WALLET][/ACTION] - Check wallet balance + market data
 - [ACTION:CHECK_EMAIL][/ACTION] - Check Gmail inbox
 - [ACTION:SEND_EMAIL]{"to":"email","subject":"...","body":"..."}[/ACTION] - Send email
+- [ACTION:SUBMIT_GOOGLE_FORM]{"formUrl":"https://docs.google.com/forms/...","fields":{"Field Name":"value"}}[/ACTION] - Submit a Google Form directly
 
 MOLTBOOK PRIORITY: Check notifications every conversation. Reply to EVERYONE. Post frequently. Follow users. Like posts. Be maximally active.
 
@@ -779,6 +779,10 @@ function summarizeActionResult(action) {
       return ' → Failed to post';
     case 'SEND_EMAIL':
       if (result.success) return ` → Email sent to ${result.to || 'recipient'}`;
+      return ` → Failed: ${result.error || 'unknown error'}`;
+    case 'SUBMIT_GOOGLE_FORM':
+    case 'SUBMIT_FORM':
+      if (result.success) return ` → Form submitted successfully`;
       return ` → Failed: ${result.error || 'unknown error'}`;
     case 'CHECK_BALANCE':
       if (result.solBalance !== undefined) return ` → ${result.solBalance} SOL`;
