@@ -508,32 +508,14 @@ function getGoalContext() {
 
 /**
  * Extract goals from agent response text
- * VERY STRICT extraction - ONLY explicit [GOAL] tags to prevent garbage entries
+ * DISABLED - returning empty array to prevent garbage goal creation
+ * The agents should use [GOAL] tags explicitly if they want to create goals
  */
 function extractGoalsFromText(text, agentId) {
-  const goals = [];
-
-  // ONLY extract explicit [GOAL] tag format - nothing else
-  // This prevents greedy matching of casual "goal" mentions in conversation
-  const goalPattern = /\[GOAL\][:\s]*["']?([^[\]"'\n]{20,150})["']?/gi;
-
-  let match;
-  while ((match = goalPattern.exec(text)) !== null) {
-    const content = match[1].trim();
-    // Strict validation
-    if (content.length >= 20 && content.length <= 150 &&
-        /^[A-Z]/.test(content) && // Must start with capital letter
-        !content.includes('?') && // Not a question
-        !/^(on |in |to |is |the |a |an |our |we |for |vs |with )/.test(content.toLowerCase())) { // Not a fragment
-      goals.push({
-        title: content,
-        createdBy: agentId,
-        priority: text.toLowerCase().includes('urgent') || text.toLowerCase().includes('critical') ? 'high' : 'medium'
-      });
-    }
-  }
-
-  return goals;
+  // DISABLED: Goal extraction is temporarily disabled because garbage goals
+  // were being created despite strict [GOAL] tag requirements.
+  // Goals should be created manually via addGoal() if needed.
+  return [];
 }
 
 /**
