@@ -301,17 +301,24 @@ async function postCommunity() {
 
   console.log(`[x-cadence] Community post: ${post}`);
 
-  // For now, post to timeline with community tag
-  // TODO: Implement actual community posting via browser
-  const communityPost = post;
-  const result = await xBrowser.postTweet(communityPost);
+  // Post to the actual X Community
+  const communityId = process.env.X_COMMUNITY_ID;
+  let result;
+
+  if (communityId) {
+    console.log(`[x-cadence] Posting to community ${communityId}...`);
+    result = await xBrowser.postToCommunity(communityId, post);
+  } else {
+    console.log('[x-cadence] No X_COMMUNITY_ID set, posting to timeline instead');
+    result = await xBrowser.postTweet(post);
+  }
 
   if (result.success) {
     state.lastCommunityPost = new Date().toISOString();
     state.tweetsToday++;
     state.timelinePostsInCycle = 0; // Reset cycle
     saveState(state);
-    console.log('[x-cadence] Community post successful, cycle reset');
+    console.log(`[x-cadence] Community post successful${communityId ? ' to community ' + communityId : ''}, cycle reset`);
 
     recordTweet('community', communityPost);
     return true;
