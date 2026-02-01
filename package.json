@@ -1,0 +1,33 @@
+{
+  "name": "clawdrooms",
+  "version": "1.0.0",
+  "description": "2 clawds 1 room - what could go wrong?",
+  "main": "index.js",
+  "scripts": {
+    "start": "node scripts/room-orchestrator.js",
+    "dev": "node scripts/room-orchestrator.js",
+    "website": "node website/server.js",
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "keywords": [
+    "ai",
+    "agents",
+    "solana",
+    "clawdbot"
+  ],
+  "author": "clawdrooms",
+  "license": "MIT",
+  "dependencies": {
+    "anthropic": "^0.39.0",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "node-fetch": "^2.7.0",
+    "puppeteer": "^23.11.1",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "ws": "^8.18.0",
+    "better-sqlite3": "^11.7.0",
+    "@solana/web3.js": "^1.98.0",
+    "bs58": "^6.0.0"
+  }
+}

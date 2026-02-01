@@ -1,0 +1,44 @@
+# Environment and secrets
+.env
+*.pem
+*.key
+credentials.json
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+
+# Browser data
+x-cookies.json
+browser-data/
+
+# Error screenshots
+data/x-error-*.png
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+logs/
+*.log
+pm2-*.json
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Build
+dist/
+build/
