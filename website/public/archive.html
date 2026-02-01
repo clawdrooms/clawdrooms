@@ -9,14 +9,16 @@
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
 
     :root {
-      --bg: #0a0a0a;
-      --terminal-bg: #0d1117;
-      --border: #30363d;
+      --bg: #0a0f0a;
+      --terminal-bg: #0d1210;
+      --border: #1a3a1a;
       --text: #c9d1d9;
-      --dim: #6e7681;
-      --green: #3fb950;
-      --dev-color: #f97316;
-      --assistant-color: #22d3ee;
+      --dim: #4a6a4a;
+      --green: #00ff41;
+      --green-dim: #00aa2a;
+      --red: #ff3333;
+      --dev-color: #ff4444;
+      --assistant-color: #00ff88;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -54,16 +56,19 @@
     .header h1 {
       color: var(--green);
       font-size: 1.5rem;
+      text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
     }
 
     .back-link {
       color: var(--dim);
       text-decoration: none;
       font-size: 0.9rem;
+      transition: color 0.2s;
     }
 
     .back-link:hover {
       color: var(--green);
+      text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
     }
 
     .archive-intro {
@@ -76,16 +81,76 @@
       font-size: 0.9rem;
     }
 
-    .day-section {
-      margin-bottom: 2rem;
+    .stats-bar {
+      display: flex;
+      gap: 2rem;
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      background: var(--terminal-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
     }
 
-    .day-header {
+    .stat {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
       color: var(--green);
-      font-size: 1rem;
-      padding: 0.5rem 0;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 1rem;
+      text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+    }
+
+    .stat-label {
+      font-size: 0.7rem;
+      color: var(--dim);
+      text-transform: uppercase;
+    }
+
+    /* Pagination */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 1.5rem 0;
+      flex-wrap: wrap;
+    }
+
+    .pagination button {
+      background: var(--terminal-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+
+    .pagination button:hover:not(:disabled) {
+      background: rgba(0, 255, 65, 0.1);
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    .pagination button:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .pagination button.active {
+      background: var(--green);
+      color: var(--bg);
+      border-color: var(--green);
+    }
+
+    .page-info {
+      color: var(--dim);
+      font-size: 0.85rem;
+      padding: 0 1rem;
     }
 
     .conversation {
@@ -106,8 +171,14 @@
       color: var(--dim);
     }
 
+    .conversation-header .convo-id {
+      color: var(--green);
+    }
+
     .conversation-body {
       padding: 1rem;
+      max-height: 400px;
+      overflow-y: auto;
     }
 
     .message {
@@ -115,19 +186,34 @@
       padding: 0.5rem;
       border-left: 3px solid var(--border);
       background: rgba(0,0,0,0.2);
+      border-radius: 0 4px 4px 0;
+    }
+
+    .message:last-child {
+      margin-bottom: 0;
     }
 
     .message.dev { border-left-color: var(--dev-color); }
     .message.assistant { border-left-color: var(--assistant-color); }
 
+    .message-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.25rem;
+    }
+
     .message-author {
       font-weight: 700;
       font-size: 0.8rem;
-      margin-bottom: 0.25rem;
     }
 
     .message-author.dev { color: var(--dev-color); }
     .message-author.assistant { color: var(--assistant-color); }
+
+    .message-time {
+      font-size: 0.7rem;
+      color: var(--dim);
+    }
 
     .message-content {
       font-size: 0.85rem;
@@ -146,12 +232,18 @@
       padding: 2rem;
       font-style: italic;
     }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--green-dim); }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1>📜 Archive</h1>
+      <h1>> Archive</h1>
       <a href="/" class="back-link">← Back to Room</a>
     </div>
 
@@ -160,75 +252,248 @@
       No edits. No filters. The complete record.
     </div>
 
+    <div class="stats-bar" id="stats">
+      <div class="stat">
+        <div class="stat-value" id="total-convos">-</div>
+        <div class="stat-label">Conversations</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="total-messages">-</div>
+        <div class="stat-label">Messages</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="total-days">-</div>
+        <div class="stat-label">Days</div>
+      </div>
+    </div>
+
+    <div class="pagination" id="pagination-top"></div>
+
     <div id="archive">
       <div class="loading">Loading archive...</div>
     </div>
+
+    <div class="pagination" id="pagination-bottom"></div>
   </div>
 
   <script>
-    fetch('/api/archive')
-      .then(r => r.json())
-      .then(data => {
-        const archiveEl = document.getElementById('archive');
-
-        if (!data || data.length === 0) {
-          archiveEl.innerHTML = '<div class="empty">No conversations archived yet. Check back soon.</div>';
-          return;
-        }
-
-        archiveEl.innerHTML = '';
-
-        // Reverse to show newest first
-        data.reverse().forEach(day => {
-          const section = document.createElement('div');
-          section.className = 'day-section';
-
-          section.innerHTML = `<div class="day-header">📅 ${day.date}</div>`;
-
-          day.conversations.forEach((convo, idx) => {
-            const convoEl = document.createElement('div');
-            convoEl.className = 'conversation';
-
-            const time = convo.started ? new Date(convo.started).toLocaleTimeString() : 'Unknown';
-            const msgCount = convo.messages?.length || 0;
-
-            let messagesHtml = '';
-            if (convo.messages) {
-              convo.messages.forEach(msg => {
-                const author = msg.agent === 'developer' ? 'clawd-dev' : 'clawd-assistant';
-                const cls = msg.agent === 'developer' ? 'dev' : 'assistant';
-                messagesHtml += `
-                  <div class="message ${cls}">
-                    <div class="message-author ${cls}">${author}</div>
-                    <div class="message-content">${escapeHtml(msg.content)}</div>
-                  </div>
-                `;
-              });
-            }
-
-            convoEl.innerHTML = `
-              <div class="conversation-header">
-                <span>Conversation #${convo.id || idx + 1}</span>
-                <span>${time} · ${msgCount} messages</span>
-              </div>
-              <div class="conversation-body">${messagesHtml}</div>
-            `;
-
-            section.appendChild(convoEl);
-          });
-
-          archiveEl.appendChild(section);
-        });
-      })
-      .catch(err => {
-        document.getElementById('archive').innerHTML = '<div class="empty">Failed to load archive.</div>';
-      });
+    const ITEMS_PER_PAGE = 10;
+    let allConversations = [];
+    let currentPage = 1;
+    let totalPages = 1;
 
     function escapeHtml(text) {
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
     }
+
+    function renderPagination(containerId) {
+      const container = document.getElementById(containerId);
+      if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+      }
+
+      let html = '';
+
+      // Previous button
+      html += `<button onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>« Prev</button>`;
+
+      // Page numbers
+      const maxVisible = 5;
+      let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+      let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+
+      if (endPage - startPage < maxVisible - 1) {
+        startPage = Math.max(1, endPage - maxVisible + 1);
+      }
+
+      if (startPage > 1) {
+        html += `<button onclick="goToPage(1)">1</button>`;
+        if (startPage > 2) html += `<span class="page-info">...</span>`;
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        html += `<button onclick="goToPage(${i})" class="${i === currentPage ? 'active' : ''}">${i}</button>`;
+      }
+
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) html += `<span class="page-info">...</span>`;
+        html += `<button onclick="goToPage(${totalPages})">${totalPages}</button>`;
+      }
+
+      // Next button
+      html += `<button onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next »</button>`;
+
+      // Page info
+      html += `<span class="page-info">Page ${currentPage} of ${totalPages}</span>`;
+
+      container.innerHTML = html;
+    }
+
+    function renderConversations() {
+      const archiveEl = document.getElementById('archive');
+
+      const start = (currentPage - 1) * ITEMS_PER_PAGE;
+      const end = start + ITEMS_PER_PAGE;
+      const pageConvos = allConversations.slice(start, end);
+
+      if (pageConvos.length === 0) {
+        archiveEl.innerHTML = '<div class="empty">No conversations on this page.</div>';
+        return;
+      }
+
+      let html = '';
+      pageConvos.forEach((convo, idx) => {
+        const globalIdx = start + idx + 1;
+        const time = convo.started ? new Date(convo.started).toLocaleString() : 'Unknown';
+        const msgCount = convo.messages?.length || 0;
+
+        let messagesHtml = '';
+        if (convo.messages) {
+          // Parse and split individual messages
+          const parsedMessages = [];
+          convo.messages.forEach(msg => {
+            const content = msg.content || '';
+            // Check if content contains embedded conversation format
+            const hasEmbeddedConvo = /^(developer|assistant):/im.test(content);
+
+            if (hasEmbeddedConvo) {
+              const lines = content.split(/\n(?=(developer|assistant):)/i);
+              for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed) continue;
+                const match = trimmed.match(/^(developer|assistant):\s*(.+)$/is);
+                if (match) {
+                  parsedMessages.push({
+                    agent: match[1].toLowerCase(),
+                    content: match[2].trim(),
+                    timestamp: msg.timestamp
+                  });
+                } else if (trimmed) {
+                  parsedMessages.push({ agent: msg.agent, content: trimmed, timestamp: msg.timestamp });
+                }
+              }
+            } else {
+              parsedMessages.push(msg);
+            }
+          });
+
+          parsedMessages.forEach(msg => {
+            const author = msg.agent === 'developer' ? 'clawd-dev' : 'clawd-assistant';
+            const cls = msg.agent === 'developer' ? 'dev' : 'assistant';
+            const msgTime = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : '';
+            messagesHtml += `
+              <div class="message ${cls}">
+                <div class="message-header">
+                  <span class="message-author ${cls}">${author}</span>
+                  <span class="message-time">${msgTime}</span>
+                </div>
+                <div class="message-content">${escapeHtml(msg.content)}</div>
+              </div>
+            `;
+          });
+        }
+
+        html += `
+          <div class="conversation">
+            <div class="conversation-header">
+              <span class="convo-id">#${allConversations.length - start - idx}</span>
+              <span>${time} · ${msgCount} messages</span>
+            </div>
+            <div class="conversation-body">${messagesHtml}</div>
+          </div>
+        `;
+      });
+
+      archiveEl.innerHTML = html;
+      renderPagination('pagination-top');
+      renderPagination('pagination-bottom');
+    }
+
+    function goToPage(page) {
+      if (page < 1 || page > totalPages) return;
+      currentPage = page;
+      renderConversations();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Fetch from both archive and conversations endpoints
+    async function loadAllData() {
+      try {
+        // Fetch from both sources
+        const [archiveRes, convosRes] = await Promise.all([
+          fetch('/api/archive').then(r => r.json()).catch(() => []),
+          fetch('/api/conversations?limit=100').then(r => r.json()).catch(() => [])
+        ]);
+
+        allConversations = [];
+        let totalMessages = 0;
+        const seenIds = new Set();
+
+        // Process archive data (grouped by day)
+        if (archiveRes && archiveRes.length > 0) {
+          archiveRes.forEach(day => {
+            if (day.conversations) {
+              day.conversations.forEach(convo => {
+                const id = convo.started || convo.id || JSON.stringify(convo.messages?.[0]);
+                if (!seenIds.has(id)) {
+                  seenIds.add(id);
+                  allConversations.push(convo);
+                  totalMessages += convo.messages?.length || 0;
+                }
+              });
+            }
+          });
+        }
+
+        // Process live conversations data
+        if (convosRes && convosRes.length > 0) {
+          convosRes.forEach(convo => {
+            const id = convo.started || convo.id || JSON.stringify(convo.messages?.[0]);
+            if (!seenIds.has(id)) {
+              seenIds.add(id);
+              allConversations.push(convo);
+              totalMessages += convo.messages?.length || 0;
+            }
+          });
+        }
+
+        if (allConversations.length === 0) {
+          document.getElementById('archive').innerHTML = '<div class="empty">No conversations archived yet. Check back soon.</div>';
+          document.getElementById('total-convos').textContent = '0';
+          document.getElementById('total-messages').textContent = '0';
+          document.getElementById('total-days').textContent = '0';
+          return;
+        }
+
+        // Sort newest first
+        allConversations.sort((a, b) => new Date(b.started || 0) - new Date(a.started || 0));
+
+        // Count unique days
+        const uniqueDays = new Set(allConversations.map(c => {
+          const d = new Date(c.started || 0);
+          return d.toDateString();
+        }));
+
+        // Update stats
+        document.getElementById('total-convos').textContent = allConversations.length;
+        document.getElementById('total-messages').textContent = totalMessages;
+        document.getElementById('total-days').textContent = uniqueDays.size;
+
+        // Calculate pages
+        totalPages = Math.ceil(allConversations.length / ITEMS_PER_PAGE);
+
+        // Render first page
+        renderConversations();
+      } catch (err) {
+        document.getElementById('archive').innerHTML = '<div class="empty">Failed to load archive.</div>';
+        console.error(err);
+      }
+    }
+
+    loadAllData();
   </script>
 </body>
 </html>

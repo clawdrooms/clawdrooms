@@ -247,7 +247,7 @@
 
     .terminal-body {
       padding: 1rem;
-      height: 500px;
+      max-height: 500px;
       overflow-y: auto;
       background: linear-gradient(180deg, rgba(0, 20, 0, 0.3) 0%, transparent 100%);
     }
@@ -787,26 +787,68 @@
         return;
       }
 
+      // Collect all individual messages
+      const allMessages = [];
+
       for (const convo of conversations) {
-        appendConversation(convo);
+        if (convo && convo.messages) {
+          for (const msg of convo.messages) {
+            // Check if content contains multiple agent exchanges (embedded conversation format)
+            const content = msg.content || '';
+
+            // Pattern to detect embedded conversation: lines starting with "developer:" or "assistant:"
+            const hasEmbeddedConvo = /^(developer|assistant):/im.test(content);
+
+            if (hasEmbeddedConvo) {
+              // Split embedded conversation into individual messages
+              const lines = content.split(/\n(?=(developer|assistant):)/i);
+              for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed) continue;
+
+                // Parse "agent: message" format
+                const match = trimmed.match(/^(developer|assistant):\s*(.+)$/is);
+                if (match) {
+                  allMessages.push({
+                    agent: match[1].toLowerCase(),
+                    content: match[2].trim(),
+                    timestamp: msg.timestamp
+                  });
+                } else if (trimmed) {
+                  // Fallback: use original agent
+                  allMessages.push({
+                    agent: msg.agent,
+                    content: trimmed,
+                    timestamp: msg.timestamp
+                  });
+                }
+              }
+            } else {
+              // Regular message - add as-is
+              allMessages.push(msg);
+            }
+          }
+        }
       }
 
-      conversationEl.scrollTop = conversationEl.scrollHeight;
-    }
+      // Sort by timestamp descending (newest first)
+      allMessages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-    function appendConversation(convo) {
-      if (!convo || !convo.messages) return;
+      // Take last 50 messages to avoid overwhelming the display
+      const displayMessages = allMessages.slice(0, 50);
 
-      for (const msg of convo.messages) {
+      // Render messages (newest at top)
+      for (const msg of displayMessages) {
         const div = document.createElement('div');
-        div.className = `message ${msg.agent === 'developer' ? 'dev' : 'assistant'}`;
+        const agentClass = msg.agent === 'developer' ? 'dev' : 'assistant';
+        div.className = `message ${agentClass}`;
 
-        const time = new Date(msg.timestamp).toLocaleTimeString();
+        const time = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : '';
         const author = msg.agent === 'developer' ? 'clawd-dev' : 'clawd-assistant';
 
         div.innerHTML = `
           <div class="message-header">
-            <span class="message-author ${msg.agent === 'developer' ? 'dev' : 'assistant'}">${author}</span>
+            <span class="message-author ${agentClass}">${author}</span>
             <span class="message-time">${time}</span>
           </div>
           <div class="message-content">${escapeHtml(msg.content)}</div>
@@ -814,8 +856,12 @@
 
         conversationEl.appendChild(div);
       }
+    }
 
-      conversationEl.scrollTop = conversationEl.scrollHeight;
+    function appendConversation(convo) {
+      if (!convo || !convo.messages) return;
+      // Re-render all to maintain sort order
+      fetchConversations();
     }
 
     function escapeHtml(text) {
