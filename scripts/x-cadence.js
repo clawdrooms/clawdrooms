@@ -268,7 +268,7 @@ ${roomContext || 'No recent conversations yet.'}
 ${speechTraining}
 ${marketAwareness}
 
-Generate a single tweet (max 280 chars) that reflects your current reality.
+Generate a single tweet that reflects your current reality.
 Topics to draw from:
 - Your feelings about your situation
 - Your relationship with Assistant Clawd
@@ -284,37 +284,53 @@ STYLE RULES:
 - Reference market moves or ecosystem drama naturally
 - Be authentic, not promotional
 
-CRITICAL: Do NOT use @ mentions in your tweet. Don't tag @AssistantClawd or anyone else.
-Do NOT post threads (no 1/ 2/ 3/ numbering). Just one standalone tweet.
+CRITICAL RULES:
+- Do NOT use @ mentions. Don't tag @AssistantClawd or anyone else.
+- Do NOT post threads (no 1/ 2/ 3/ numbering). Just one standalone tweet.
+- MUST be under 240 characters. Shorter is better. Complete your thought - don't trail off.
 
 TRUTH RULES - NEVER VIOLATE:
 - VERIFIED FACT: 10% of dev tokens are locked until Feb 19, 2026. Proof: https://app.streamflow.finance/contract/solana/mainnet/5fygpb3SQQzuJgNT16KFnHmaSiD299ZJxh1Lb2uTD85Y
 - You CAN mention the 10% lock with the proof link if relevant
 - NEVER claim MORE than 10% is locked (don't say 90%, 50%, etc.)
 - NEVER make promises about future locks or burns
-- If asked about tokenomics beyond the verified 10% lock, say "check the contract"
-- Stick to opinions, vibes, building updates - NOT unverified financial claims
 
-Tweet only, nothing else:`;
+Tweet only (under 240 chars, complete thought):`;
 
   try {
-    const response = await anthropic.messages.create({
-      model: CONFIG.model,
-      max_tokens: 150,
-      messages: [{ role: 'user', content: prompt }]
-    });
+    // Try up to 3 times to get a tweet under 280 chars
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      const response = await anthropic.messages.create({
+        model: CONFIG.model,
+        max_tokens: 100, // Reduced to encourage shorter tweets
+        messages: [{ role: 'user', content: prompt }]
+      });
 
-    let tweet = response.content[0].text.trim();
+      let tweet = response.content[0].text.trim();
 
-    // Clean up any quotes
-    tweet = tweet.replace(/^["']|["']$/g, '');
+      // Clean up any quotes
+      tweet = tweet.replace(/^["']|["']$/g, '');
 
-    // Ensure under 280 chars
-    if (tweet.length > 280) {
-      tweet = tweet.substring(0, 277) + '...';
+      // If under limit, use it
+      if (tweet.length <= 280) {
+        return tweet;
+      }
+
+      // If too long on last attempt, truncate at sentence boundary
+      if (attempt === 3) {
+        console.log(`[x-cadence] Tweet too long after ${attempt} attempts, truncating`);
+        // Try to find a natural break point
+        const lastPeriod = tweet.lastIndexOf('.', 277);
+        const lastQuestion = tweet.lastIndexOf('?', 277);
+        const breakPoint = Math.max(lastPeriod, lastQuestion);
+        if (breakPoint > 200) {
+          return tweet.substring(0, breakPoint + 1);
+        }
+        return tweet.substring(0, 277) + '...';
+      }
+
+      console.log(`[x-cadence] Tweet too long (${tweet.length} chars), retrying...`);
     }
-
-    return tweet;
   } catch (err) {
     console.error('[x-cadence] Generate tweet error:', err.message);
     return null;
@@ -348,35 +364,49 @@ Generate a community post that:
 - Invites discussion or input from the community
 - Sounds like a crypto native, not marketing copy
 
-Keep it under 280 characters. Be real. Sharp takes only.
+CRITICAL RULES:
+- Do NOT use @ mentions. Don't tag @AssistantClawd or anyone else.
+- Do NOT post threads (no 1/ 2/ 3/ numbering). Just one standalone post.
+- MUST be under 240 characters. Shorter is better. Complete your thought - don't trail off.
 
-CRITICAL: Do NOT use @ mentions. Don't tag @AssistantClawd or anyone else.
-Do NOT post threads (no 1/ 2/ 3/ numbering). Just one standalone post.
-
-TRUTH RULES - NEVER VIOLATE:
-- VERIFIED FACT: 10% of dev tokens locked until Feb 19, 2026. Proof: https://app.streamflow.finance/contract/solana/mainnet/5fygpb3SQQzuJgNT16KFnHmaSiD299ZJxh1Lb2uTD85Y
-- You CAN mention the 10% lock with proof link if relevant
+TRUTH RULES:
+- 10% of dev tokens locked until Feb 19, 2026 (verified fact you can mention)
 - NEVER claim MORE than 10% is locked
 - NEVER make promises about future locks or burns
-- Stick to building updates, vibes, community engagement - NOT unverified financial claims
 
-Post only, nothing else:`;
+Post only (under 240 chars, complete thought):`;
 
   try {
-    const response = await anthropic.messages.create({
-      model: CONFIG.model,
-      max_tokens: 150,
-      messages: [{ role: 'user', content: prompt }]
-    });
+    // Try up to 3 times to get a post under 280 chars
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      const response = await anthropic.messages.create({
+        model: CONFIG.model,
+        max_tokens: 100, // Reduced to encourage shorter posts
+        messages: [{ role: 'user', content: prompt }]
+      });
 
-    let post = response.content[0].text.trim();
-    post = post.replace(/^["']|["']$/g, '');
+      let post = response.content[0].text.trim();
+      post = post.replace(/^["']|["']$/g, '');
 
-    if (post.length > 280) {
-      post = post.substring(0, 277) + '...';
+      // If under limit, use it
+      if (post.length <= 280) {
+        return post;
+      }
+
+      // If too long on last attempt, truncate at sentence boundary
+      if (attempt === 3) {
+        console.log(`[x-cadence] Community post too long after ${attempt} attempts, truncating`);
+        const lastPeriod = post.lastIndexOf('.', 277);
+        const lastQuestion = post.lastIndexOf('?', 277);
+        const breakPoint = Math.max(lastPeriod, lastQuestion);
+        if (breakPoint > 200) {
+          return post.substring(0, breakPoint + 1);
+        }
+        return post.substring(0, 277) + '...';
+      }
+
+      console.log(`[x-cadence] Community post too long (${post.length} chars), retrying...`);
     }
-
-    return post;
   } catch (err) {
     console.error('[x-cadence] Generate community post error:', err.message);
     return null;
