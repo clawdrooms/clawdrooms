@@ -291,6 +291,47 @@ setInterval(() => {
   });
 }, 10000);
 
+// Treasury API endpoints
+const TREASURY_DB_FILE = path.join(__dirname, '..', 'data', 'treasury-operations.json');
+
+function loadTreasuryDB() {
+  try {
+    if (fs.existsSync(TREASURY_DB_FILE)) {
+      return JSON.parse(fs.readFileSync(TREASURY_DB_FILE, 'utf8'));
+    }
+  } catch (err) {}
+  return { operations: [], stats: { totalBuybacks: 0, totalBuybackSOL: 0, totalBurns: 0, totalTokensBurned: 0 } };
+}
+
+// Get treasury stats
+app.get('/api/treasury/stats', (req, res) => {
+  const db = loadTreasuryDB();
+  res.json({
+    ...db.stats,
+    operationCount: db.operations.length,
+    contractAddress: process.env.TOKEN_MINT_ADDRESS || 'HK4ot7dtuyPYVZS2cX1zKmwpeHnGVHLAvBzagGLJheYw'
+  });
+});
+
+// Get treasury operation history
+app.get('/api/treasury/history', (req, res) => {
+  const limit = parseInt(req.query.limit) || 20;
+  const db = loadTreasuryDB();
+  res.json(db.operations.slice(-limit).reverse());
+});
+
+// Get all burns specifically
+app.get('/api/treasury/burns', (req, res) => {
+  const limit = parseInt(req.query.limit) || 50;
+  const db = loadTreasuryDB();
+  const burns = db.operations.filter(op => op.type === 'burn').slice(-limit).reverse();
+  res.json({
+    burns,
+    totalBurned: db.stats.totalTokensBurned,
+    burnCount: db.stats.totalBurns
+  });
+});
+
 // Start server
 server.listen(PORT, () => {
   console.log(`[website] Clawdrooms running on port ${PORT}`);
