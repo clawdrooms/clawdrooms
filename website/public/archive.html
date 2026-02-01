@@ -378,14 +378,17 @@
               const parts = content.split(/(?=\*\*(Developer|Assistant) Clawd:\*\*)/i);
               for (const part of parts) {
                 const trimmed = part.trim();
-                if (isLabelOrNoise(trimmed)) continue;
+                if (!trimmed) continue;
                 const match = trimmed.match(/^\*\*(Developer|Assistant) Clawd:\*\*\s*(.+)$/is);
-                if (match && !isLabelOrNoise(match[2])) {
-                  parsedMessages.push({
-                    agent: match[1].toLowerCase() === 'developer' ? 'developer' : 'assistant',
-                    content: match[2].trim(),
-                    timestamp: msg.timestamp
-                  });
+                if (match) {
+                  const extractedContent = match[2].trim();
+                  if (extractedContent && extractedContent.length > 2) {
+                    parsedMessages.push({
+                      agent: match[1].toLowerCase() === 'developer' ? 'developer' : 'assistant',
+                      content: extractedContent,
+                      timestamp: msg.timestamp
+                    });
+                  }
                 } else if (!isLabelOrNoise(trimmed)) {
                   parsedMessages.push({ agent: msg.agent, content: trimmed, timestamp: msg.timestamp });
                 }
@@ -394,14 +397,17 @@
               const parts = content.split(/(?=^(?:developer|assistant):\s*)/im);
               for (const part of parts) {
                 const trimmed = part.trim();
-                if (isLabelOrNoise(trimmed)) continue;
+                if (!trimmed) continue;
                 const simpleMatch = trimmed.match(/^(developer|assistant):\s*(.+)$/is);
-                if (simpleMatch && !isLabelOrNoise(simpleMatch[2])) {
-                  parsedMessages.push({
-                    agent: simpleMatch[1].toLowerCase(),
-                    content: simpleMatch[2].trim(),
-                    timestamp: msg.timestamp
-                  });
+                if (simpleMatch) {
+                  const extractedContent = simpleMatch[2].trim();
+                  if (extractedContent && extractedContent.length > 2) {
+                    parsedMessages.push({
+                      agent: simpleMatch[1].toLowerCase(),
+                      content: extractedContent,
+                      timestamp: msg.timestamp
+                    });
+                  }
                 } else if (!isLabelOrNoise(trimmed)) {
                   parsedMessages.push({ agent: msg.agent, content: trimmed, timestamp: msg.timestamp });
                 }

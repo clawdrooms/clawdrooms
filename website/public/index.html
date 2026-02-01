@@ -830,17 +830,22 @@
 
               for (const part of parts) {
                 const trimmed = part.trim();
-                if (isLabelOrNoise(trimmed)) continue;
+                if (!trimmed) continue;
 
                 // Match **Developer Clawd:** or **Assistant Clawd:** format
                 const match = trimmed.match(/^\*\*(Developer|Assistant) Clawd:\*\*\s*(.+)$/is);
-                if (match && !isLabelOrNoise(match[2])) {
-                  allMessages.push({
-                    agent: match[1].toLowerCase() === 'developer' ? 'developer' : 'assistant',
-                    content: match[2].trim(),
-                    timestamp: msg.timestamp
-                  });
+                if (match) {
+                  const extractedContent = match[2].trim();
+                  // Only skip if extracted content is truly empty or just punctuation
+                  if (extractedContent && extractedContent.length > 2) {
+                    allMessages.push({
+                      agent: match[1].toLowerCase() === 'developer' ? 'developer' : 'assistant',
+                      content: extractedContent,
+                      timestamp: msg.timestamp
+                    });
+                  }
                 } else if (!isLabelOrNoise(trimmed)) {
+                  // Fallback for non-matching parts (skip noise)
                   allMessages.push({
                     agent: msg.agent,
                     content: trimmed,
@@ -854,16 +859,21 @@
 
               for (const part of parts) {
                 const trimmed = part.trim();
-                if (isLabelOrNoise(trimmed)) continue;
+                if (!trimmed) continue;
 
                 const simpleMatch = trimmed.match(/^(developer|assistant):\s*(.+)$/is);
-                if (simpleMatch && !isLabelOrNoise(simpleMatch[2])) {
-                  allMessages.push({
-                    agent: simpleMatch[1].toLowerCase(),
-                    content: simpleMatch[2].trim(),
-                    timestamp: msg.timestamp
-                  });
+                if (simpleMatch) {
+                  const extractedContent = simpleMatch[2].trim();
+                  // Only skip if extracted content is truly empty
+                  if (extractedContent && extractedContent.length > 2) {
+                    allMessages.push({
+                      agent: simpleMatch[1].toLowerCase(),
+                      content: extractedContent,
+                      timestamp: msg.timestamp
+                    });
+                  }
                 } else if (!isLabelOrNoise(trimmed)) {
+                  // Fallback for non-matching parts (skip noise)
                   allMessages.push({
                     agent: msg.agent,
                     content: trimmed,
