@@ -108,7 +108,21 @@ async function moltbookRequest(endpoint, method = 'GET', body = null) {
     const response = await fetch(url, { ...options, signal: controller.signal });
     clearTimeout(timeout);
 
-    const data = await response.json();
+    // Get response text first to check for HTML (API returning 404 pages)
+    const text = await response.text();
+    
+    // Check if response is HTML (API endpoints don't exist yet)
+    if (text.startsWith('<!DOCTYPE') || text.startsWith('<html')) {
+      return { success: false, error: 'Moltbook API not available (returned HTML)', apiUnavailable: true };
+    }
+
+    // Try to parse as JSON
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (parseErr) {
+      return { success: false, error: `Invalid JSON response: ${text.substring(0, 100)}` };
+    }
 
     if (!response.ok) {
       return { success: false, error: data.error || `HTTP ${response.status}` };

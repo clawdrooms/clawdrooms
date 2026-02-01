@@ -814,8 +814,10 @@ async function executeAction(action) {
       result = { success: false, error: `Unknown action type: ${action.type}` };
   }
 
-  // Log the action
-  logAction(action, result);
+  // Log the action (skip queued items - only log things that actually happened)
+  if (!result.queued) {
+    logAction(action, result);
+  }
 
   return result;
 }
