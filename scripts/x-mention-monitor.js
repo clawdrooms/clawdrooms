@@ -2,7 +2,7 @@
  * X Mention Monitor for Clawdrooms
  *
  * Monitors @clawdrooms mentions and enables intelligent replies:
- * - Fetches recent mentions via browser
+ * - Fetches recent mentions via X API v2 (fast, reliable)
  * - Analyzes mention context and intent
  * - Generates on-brand replies using shared memory
  * - Tracks reply history to avoid spam
@@ -15,7 +15,7 @@ const path = require('path');
 const Anthropic = require('@anthropic-ai/sdk').default;
 
 // Load dependencies
-let contextualIntelligence, xBrowserPoster;
+let contextualIntelligence, xApiClient;
 
 try {
   contextualIntelligence = require('./contextual-intelligence');
@@ -25,10 +25,10 @@ try {
 }
 
 try {
-  xBrowserPoster = require('./x-browser-poster');
-  console.log('[x-mentions] X browser poster loaded');
+  xApiClient = require('./x-api-client');
+  console.log('[x-mentions] X API client loaded');
 } catch (err) {
-  console.log('[x-mentions] X browser poster not available:', err.message);
+  console.log('[x-mentions] X API client not available:', err.message);
 }
 
 // Claude client for intelligent responses
@@ -330,8 +330,8 @@ function analyzeMention(mention) {
     analysis.priority = 'low';
     analysis.reasons.push('Greeting');
   }
-  // Thread replies
-  else if (mention.inReplyTo) {
+  // Thread replies (check both possible field names)
+  else if (mention.inReplyTo || mention.inReplyToUserId) {
     analysis.shouldReply = true;
     analysis.replyType = 'thread_reply';
     analysis.priority = 'medium';
@@ -359,9 +359,9 @@ function analyzeMention(mention) {
 // ============================================
 
 async function postReply(mentionId, replyText, authorHandle, context = {}) {
-  if (!xBrowserPoster || !xBrowserPoster.replyToTweet) {
-    console.log('[x-mentions] Cannot reply - browser poster not available');
-    return { success: false, error: 'Browser poster not available' };
+  if (!xApiClient || !xApiClient.replyToTweet) {
+    console.log('[x-mentions] Cannot reply - X API client not available');
+    return { success: false, error: 'X API client not available' };
   }
 
   // Check rate limit
@@ -371,12 +371,10 @@ async function postReply(mentionId, replyText, authorHandle, context = {}) {
   }
 
   try {
-    // Build tweet URL for reply
-    const tweetUrl = `https://x.com/${authorHandle}/status/${mentionId}`;
-
     console.log(`[x-mentions] Replying to @${authorHandle}: "${replyText.substring(0, 50)}..."`);
 
-    const result = await xBrowserPoster.replyToTweet(tweetUrl, replyText);
+    // Use X API to reply directly with tweet ID
+    const result = await xApiClient.replyToTweet(mentionId, replyText);
 
     if (result.success) {
       // Record the reply with full context for future conversations
@@ -385,11 +383,11 @@ async function postReply(mentionId, replyText, authorHandle, context = {}) {
         authorHandle,
         incomingText: context.incomingText || null,
         replyText,
-        replyId: result.replyId || null,
+        replyId: result.tweetId || null,
         timestamp: new Date().toISOString()
       });
 
-      console.log(`[x-mentions] Successfully replied`);
+      console.log(`[x-mentions] Successfully replied (tweet ${result.tweetId})`);
       return { success: true };
     }
 
@@ -480,15 +478,20 @@ function canReplyNow() {
 // ============================================
 
 async function fetchMentions() {
-  if (!xBrowserPoster || !xBrowserPoster.getMentions) {
-    console.log('[x-mentions] Cannot fetch mentions - browser not available');
+  if (!xApiClient || !xApiClient.getMentions) {
+    console.log('[x-mentions] Cannot fetch mentions - X API client not available');
     return [];
   }
 
   try {
-    console.log('[x-mentions] Fetching mentions via browser...');
-    const mentions = await xBrowserPoster.getMentions();
-    return mentions || [];
+    console.log('[x-mentions] Fetching mentions via X API...');
+    const mentions = await xApiClient.getMentions();
+
+    // Map username to author for compatibility with analyzeMention
+    return (mentions || []).map(m => ({
+      ...m,
+      author: m.username || m.author
+    }));
   } catch (err) {
     console.error('[x-mentions] Failed to fetch mentions:', err.message);
     return [];
@@ -559,10 +562,29 @@ async function runDaemonCycle() {
 async function startDaemon() {
   console.log(`
 ================================================================================
-  CLAWDROOMS X MENTION MONITOR - DAEMON MODE
+  CLAWDROOMS X MENTION MONITOR - DAEMON MODE (X API v2)
 ================================================================================
+`);
+
+  // Test API connection before starting
+  if (!xApiClient) {
+    console.error('[x-mentions] X API client not loaded - cannot start daemon');
+    process.exit(1);
+  }
+
+  console.log('[x-mentions] Testing X API connection...');
+  const connectionTest = await xApiClient.testConnection();
+
+  if (!connectionTest.success) {
+    console.error(`[x-mentions] X API connection failed: ${connectionTest.error}`);
+    console.error('[x-mentions] Check your X API credentials in .env');
+    process.exit(1);
+  }
+
+  console.log(`[x-mentions] Connected as @${connectionTest.user.username}`);
+  console.log(`
   Check interval: ${DAEMON_CHECK_INTERVAL_MS / 1000} seconds
-  Monitoring: @clawdrooms mentions
+  Monitoring: @clawdrooms mentions via X API v2
   Memory-backed: Yes (conversation context preserved)
   Started: ${new Date().toISOString()}
 ================================================================================
