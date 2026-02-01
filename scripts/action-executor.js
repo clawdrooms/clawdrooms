@@ -10,6 +10,7 @@
  * [ACTION:COMMUNITY_POST]content[/ACTION]
  * [ACTION:CHECK_EMAIL][/ACTION]
  * [ACTION:SEND_EMAIL]{"to":"...","subject":"...","body":"..."}[/ACTION]
+ * [ACTION:LAUNCH_TOKEN][/ACTION] - Launch token on pump.fun
  */
 
 require('dotenv').config();
@@ -404,6 +405,26 @@ async function sendEmail(content) {
 }
 
 /**
+ * Launch token on pump.fun
+ */
+async function launchToken() {
+  console.log('[action-executor] Launching token...');
+
+  try {
+    const launcher = require('./launch-token');
+    const contractAddress = await launcher.main();
+
+    return {
+      success: true,
+      contractAddress,
+      message: 'Token launched successfully'
+    };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+/**
  * Execute an action
  */
 async function executeAction(action) {
@@ -446,6 +467,11 @@ async function executeAction(action) {
 
     case 'SEND_EMAIL':
       result = await sendEmail(action.content);
+      break;
+
+    case 'LAUNCH_TOKEN':
+    case 'LAUNCH':
+      result = await launchToken();
       break;
 
     default:
@@ -516,6 +542,7 @@ module.exports = {
   executeCommunityPost,
   checkEmail,
   sendEmail,
+  launchToken,
   isSpamOrLowQuality
 };
 
