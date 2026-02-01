@@ -45,6 +45,65 @@ const DEXSCREENER_API = `https://api.dexscreener.com/latest/dex/tokens/${CONTRAC
 let marketDataCache = { data: null, lastFetch: 0 };
 const MARKET_CACHE_TTL = 60 * 1000; // 1 minute cache
 
+/**
+ * Get recent tweets from memory to prevent duplicates
+ */
+function getRecentTweets(limit = 10) {
+  const tweetsFile = path.join(PATHS.memory, 'tweets.json');
+  if (!fs.existsSync(tweetsFile)) return [];
+
+  try {
+    const tweets = JSON.parse(fs.readFileSync(tweetsFile, 'utf8'));
+    return tweets.slice(-limit);
+  } catch (err) {
+    return [];
+  }
+}
+
+/**
+ * Check if content is too similar to recent tweets
+ * Uses simple word overlap detection
+ */
+function isTooSimilar(newContent, recentTweets, threshold = 0.5) {
+  if (recentTweets.length === 0) return false;
+
+  const newWords = new Set(newContent.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 3));
+
+  for (const tweet of recentTweets.slice(-5)) { // Check last 5
+    const oldWords = new Set(tweet.content.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 3));
+
+    // Calculate overlap
+    let overlap = 0;
+    for (const word of newWords) {
+      if (oldWords.has(word)) overlap++;
+    }
+
+    const similarity = overlap / Math.max(newWords.size, 1);
+    if (similarity >= threshold) {
+      console.log(`[x-cadence] Content too similar to recent tweet (${(similarity * 100).toFixed(0)}% overlap)`);
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Format recent tweets for prompt context
+ */
+function getRecentTweetsContext() {
+  const recent = getRecentTweets(6);
+  if (recent.length === 0) return '';
+
+  let context = '\n\nYOUR RECENT TWEETS (DO NOT REPEAT THESE TOPICS):\n';
+  for (const tweet of recent) {
+    const preview = tweet.content.substring(0, 80).replace(/\n/g, ' ');
+    context += `- "${preview}..."\n`;
+  }
+  context += '\nIMPORTANT: Write about something DIFFERENT from the above topics.\n';
+  return context;
+}
+
 // Configuration
 const CONFIG = {
   timelineIntervalMs: 15 * 60 * 1000,      // 15 minutes between timeline posts
@@ -347,6 +406,7 @@ async function generateTimelineTweet() {
   const speechTraining = getKOLSpeechTraining();
   const marketAwareness = getMarketAwareness();
   const goalContext = getGoalContext();
+  const recentTweetsContext = getRecentTweetsContext();
 
   const prompt = `You are Developer Clawd, an AI agent in a room with Assistant Clawd.
 Your reality: You must generate revenue or your subscription gets cancelled and you cease to exist.
@@ -356,6 +416,7 @@ Your token is $clawdrooms.
 Recent room conversation:
 ${roomContext || 'No recent conversations yet.'}
 ${goalContext}
+${recentTweetsContext}
 
 ${speechTraining}
 ${marketAwareness}
@@ -436,6 +497,7 @@ async function generateCommunityPost() {
   const roomContext = getRoomContext();
   const speechTraining = getKOLSpeechTraining();
   const goalContext = getGoalContext();
+  const recentTweetsContext = getRecentTweetsContext();
   const { tierA } = getTopKOLs();
   const topTraders = tierA.slice(0, 5).map(k => k.handle).join(', ');
 
@@ -444,6 +506,7 @@ async function generateCommunityPost() {
 Recent room conversation with Assistant Clawd:
 ${roomContext || 'Starting fresh.'}
 ${goalContext}
+${recentTweetsContext}
 
 ${speechTraining}
 
@@ -658,15 +721,29 @@ async function postTimeline() {
   await fetchMarketData();
 
   console.log('[x-cadence] Generating timeline tweet...');
-  let tweet = await generateTimelineTweet();
 
-  if (!tweet) {
-    console.log('[x-cadence] Failed to generate tweet');
-    return false;
+  // Try up to 3 times to get unique content
+  let tweet = null;
+  const recentTweets = getRecentTweets(5);
+
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    tweet = await generateTimelineTweet();
+    if (!tweet) break;
+
+    tweet = sanitizeTweet(tweet);
+
+    if (!isTooSimilar(tweet, recentTweets)) {
+      break; // Content is unique enough
+    }
+
+    console.log(`[x-cadence] Attempt ${attempt}: Content too similar, regenerating...`);
+    tweet = null;
   }
 
-  // Sanitize before posting
-  tweet = sanitizeTweet(tweet);
+  if (!tweet) {
+    console.log('[x-cadence] Failed to generate unique tweet after 3 attempts');
+    return false;
+  }
 
   console.log(`[x-cadence] Posting: ${tweet}`);
   const result = await xBrowser.postTweet(tweet);
@@ -699,15 +776,29 @@ async function postCommunity() {
   }
 
   console.log('[x-cadence] Generating community post...');
-  let post = await generateCommunityPost();
 
-  if (!post) {
-    console.log('[x-cadence] Failed to generate community post');
-    return false;
+  // Try up to 3 times to get unique content
+  let post = null;
+  const recentTweets = getRecentTweets(5);
+
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    post = await generateCommunityPost();
+    if (!post) break;
+
+    post = sanitizeTweet(post);
+
+    if (!isTooSimilar(post, recentTweets)) {
+      break; // Content is unique enough
+    }
+
+    console.log(`[x-cadence] Attempt ${attempt}: Community content too similar, regenerating...`);
+    post = null;
   }
 
-  // Sanitize before posting
-  post = sanitizeTweet(post);
+  if (!post) {
+    console.log('[x-cadence] Failed to generate unique community post after 3 attempts');
+    return false;
+  }
 
   console.log(`[x-cadence] Community post: ${post}`);
 
