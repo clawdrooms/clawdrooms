@@ -198,8 +198,17 @@ async function initBrowser() {
   // Set realistic user agent
   await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36');
 
-  // Load cookies if available
-  await loadCookies(page);
+  // Navigate to X first to establish domain context for cookies
+  await page.goto('https://x.com', { waitUntil: 'domcontentloaded', timeout: 30000 });
+
+  // Load cookies if available - must be done after navigating to domain
+  const cookiesLoaded = await loadCookies(page);
+
+  // If cookies loaded, reload page to apply session
+  if (cookiesLoaded) {
+    await page.reload({ waitUntil: 'networkidle2', timeout: 30000 });
+    await randomDelay(2000, 3000);
+  }
 
   return { browser, page };
 }
