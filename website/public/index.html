@@ -252,6 +252,11 @@
       background: linear-gradient(180deg, rgba(0, 20, 0, 0.3) 0%, transparent 100%);
     }
 
+    .terminal-body:empty,
+    .terminal-body:has(.typing:only-child) {
+      min-height: 100px;
+    }
+
     /* Conversation Messages */
     .message {
       margin-bottom: 1rem;
@@ -793,34 +798,46 @@
       for (const convo of conversations) {
         if (convo && convo.messages) {
           for (const msg of convo.messages) {
-            // Check if content contains multiple agent exchanges (embedded conversation format)
             const content = msg.content || '';
 
-            // Pattern to detect embedded conversation: lines starting with "developer:" or "assistant:"
-            const hasEmbeddedConvo = /^(developer|assistant):/im.test(content);
+            // Pattern to detect embedded conversation formats:
+            // - **Developer Clawd:** or **Assistant Clawd:**
+            // - developer: or assistant:
+            const hasEmbeddedConvo = /\*\*(Developer|Assistant) Clawd:\*\*|^(developer|assistant):/im.test(content);
 
             if (hasEmbeddedConvo) {
-              // Split embedded conversation into individual messages
-              const lines = content.split(/\n(?=(developer|assistant):)/i);
-              for (const line of lines) {
-                const trimmed = line.trim();
+              // Split on **Developer Clawd:** or **Assistant Clawd:** patterns
+              const parts = content.split(/(?=\*\*(Developer|Assistant) Clawd:\*\*)/i);
+
+              for (const part of parts) {
+                const trimmed = part.trim();
                 if (!trimmed) continue;
 
-                // Parse "agent: message" format
-                const match = trimmed.match(/^(developer|assistant):\s*(.+)$/is);
+                // Match **Developer Clawd:** or **Assistant Clawd:** format
+                const match = trimmed.match(/^\*\*(Developer|Assistant) Clawd:\*\*\s*(.+)$/is);
                 if (match) {
                   allMessages.push({
-                    agent: match[1].toLowerCase(),
+                    agent: match[1].toLowerCase() === 'developer' ? 'developer' : 'assistant',
                     content: match[2].trim(),
                     timestamp: msg.timestamp
                   });
-                } else if (trimmed) {
-                  // Fallback: use original agent
-                  allMessages.push({
-                    agent: msg.agent,
-                    content: trimmed,
-                    timestamp: msg.timestamp
-                  });
+                } else {
+                  // Try simpler format: developer: or assistant:
+                  const simpleMatch = trimmed.match(/^(developer|assistant):\s*(.+)$/is);
+                  if (simpleMatch) {
+                    allMessages.push({
+                      agent: simpleMatch[1].toLowerCase(),
+                      content: simpleMatch[2].trim(),
+                      timestamp: msg.timestamp
+                    });
+                  } else if (trimmed && !trimmed.startsWith('...')) {
+                    // Fallback: use original agent for non-empty, non-ellipsis content
+                    allMessages.push({
+                      agent: msg.agent,
+                      content: trimmed,
+                      timestamp: msg.timestamp
+                    });
+                  }
                 }
               }
             } else {

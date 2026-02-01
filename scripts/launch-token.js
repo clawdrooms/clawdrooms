@@ -201,7 +201,10 @@ async function launchTokenOnChain(metadataUri) {
         const bs58 = require('bs58');
 
         const connection = new Connection(CONFIG.rpcUrl, 'confirmed');
-        const wallet = Keypair.fromSecretKey(bs58.decode(CONFIG.privateKey));
+        const decodedKey = typeof bs58.decode === 'function'
+          ? bs58.decode(CONFIG.privateKey)
+          : bs58.default.decode(CONFIG.privateKey);
+        const wallet = Keypair.fromSecretKey(decodedKey);
 
         const sdk = new PumpFunSDK({ connection, wallet });
 

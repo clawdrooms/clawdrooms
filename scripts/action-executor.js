@@ -152,9 +152,11 @@ async function checkWallet() {
       process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com'
     );
 
-    // Decode base58 private key
+    // Decode base58 private key (bs58 v6 has different export)
     const bs58 = require('bs58');
-    const secretKey = bs58.decode(privateKey);
+    const secretKey = typeof bs58.decode === 'function'
+      ? bs58.decode(privateKey)
+      : bs58.default.decode(privateKey);
     const keypair = Keypair.fromSecretKey(secretKey);
 
     const balance = await connection.getBalance(keypair.publicKey);

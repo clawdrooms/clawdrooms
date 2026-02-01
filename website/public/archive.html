@@ -356,23 +356,32 @@
           const parsedMessages = [];
           convo.messages.forEach(msg => {
             const content = msg.content || '';
-            // Check if content contains embedded conversation format
-            const hasEmbeddedConvo = /^(developer|assistant):/im.test(content);
+            // Check for embedded conversation formats
+            const hasEmbeddedConvo = /\*\*(Developer|Assistant) Clawd:\*\*|^(developer|assistant):/im.test(content);
 
             if (hasEmbeddedConvo) {
-              const lines = content.split(/\n(?=(developer|assistant):)/i);
-              for (const line of lines) {
-                const trimmed = line.trim();
+              const parts = content.split(/(?=\*\*(Developer|Assistant) Clawd:\*\*)/i);
+              for (const part of parts) {
+                const trimmed = part.trim();
                 if (!trimmed) continue;
-                const match = trimmed.match(/^(developer|assistant):\s*(.+)$/is);
+                const match = trimmed.match(/^\*\*(Developer|Assistant) Clawd:\*\*\s*(.+)$/is);
                 if (match) {
                   parsedMessages.push({
-                    agent: match[1].toLowerCase(),
+                    agent: match[1].toLowerCase() === 'developer' ? 'developer' : 'assistant',
                     content: match[2].trim(),
                     timestamp: msg.timestamp
                   });
-                } else if (trimmed) {
-                  parsedMessages.push({ agent: msg.agent, content: trimmed, timestamp: msg.timestamp });
+                } else {
+                  const simpleMatch = trimmed.match(/^(developer|assistant):\s*(.+)$/is);
+                  if (simpleMatch) {
+                    parsedMessages.push({
+                      agent: simpleMatch[1].toLowerCase(),
+                      content: simpleMatch[2].trim(),
+                      timestamp: msg.timestamp
+                    });
+                  } else if (trimmed && !trimmed.startsWith('...')) {
+                    parsedMessages.push({ agent: msg.agent, content: trimmed, timestamp: msg.timestamp });
+                  }
                 }
               }
             } else {
