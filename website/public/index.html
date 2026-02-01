@@ -1001,17 +1001,23 @@
             return;
           }
 
-          activityLogEl.innerHTML = actions.map(action => {
+          // Filter out queued items - only show actually executed actions
+          const executedActions = actions.filter(action => !action.result?.queued);
+          
+          if (executedActions.length === 0) {
+            activityLogEl.innerHTML = '<div class="activity-item dim">No activity yet</div>';
+            return;
+          }
+
+          activityLogEl.innerHTML = executedActions.map(action => {
             const time = action.timestamp ? new Date(action.timestamp).toLocaleTimeString() : '';
             const typeClass = action.type?.toLowerCase() || '';
-            // Use custom status if available, otherwise derive from success
-            const isQueued = action.result?.queued;
-            const status = isQueued ? 'queued' : (action.result?.success ? 'success' : 'failed');
+            const status = action.result?.success ? 'success' : 'failed';
             const statusText = action.result?.status || (action.result?.success ? 'OK' : (action.result?.error || 'Failed'));
 
             let content = '';
             if (action.type === 'TWEET') {
-              content = (isQueued ? '[QUEUED] ' : '') + (action.content?.substring(0, 40) || 'Tweet');
+              content = action.content?.substring(0, 40) || 'Tweet';
             } else if (action.type === 'CHECK_WALLET' || action.type === 'WALLET') {
               content = action.result?.balance ? `${action.result.balance.toFixed(4)} SOL` : 'Checked wallet';
             } else if (action.type === 'CHECK_MENTIONS' || action.type === 'MENTIONS') {
