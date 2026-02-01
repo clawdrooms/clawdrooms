@@ -490,9 +490,9 @@ async function getMentions() {
  * Get community posts (if community ID is set)
  */
 async function getCommunityPosts(communityId) {
-  const { browser, page } = await initBrowser();
+  return withRetry(async () => {
+    const { browser, page } = await initBrowser();
 
-  try {
     if (!isLoggedIn) {
       const alreadyLoggedIn = await checkLogin(page);
       if (!alreadyLoggedIn) {
@@ -504,7 +504,7 @@ async function getCommunityPosts(communityId) {
 
     // Navigate to community
     const communityUrl = `https://x.com/i/communities/${communityId}`;
-    await page.goto(communityUrl, { waitUntil: 'networkidle2' });
+    await page.goto(communityUrl, { waitUntil: 'networkidle2', timeout: 60000 });
     await randomDelay(3000, 5000);
 
     const posts = await page.evaluate(() => {
@@ -529,19 +529,19 @@ async function getCommunityPosts(communityId) {
     });
 
     return posts;
-  } catch (err) {
-    console.error('[x-browser] Get community posts error:', err.message);
+  }, 3, 5000, 'getCommunityPosts').catch(err => {
+    console.error('[x-browser] Get community posts failed after retries:', err.message);
     return [];
-  }
+  });
 }
 
 /**
  * Post to community
  */
 async function postToCommunity(communityId, text) {
-  const { browser, page } = await initBrowser();
+  return withRetry(async () => {
+    const { browser, page } = await initBrowser();
 
-  try {
     if (!isLoggedIn) {
       const alreadyLoggedIn = await checkLogin(page);
       if (!alreadyLoggedIn) {
@@ -553,16 +553,16 @@ async function postToCommunity(communityId, text) {
 
     // Navigate to community
     const communityUrl = `https://x.com/i/communities/${communityId}`;
-    await page.goto(communityUrl, { waitUntil: 'networkidle2' });
+    await page.goto(communityUrl, { waitUntil: 'networkidle2', timeout: 60000 });
     await randomDelay(2000, 3000);
 
     // Click compose
-    await page.waitForSelector('[data-testid="SideNav_NewTweet_Button"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="SideNav_NewTweet_Button"]', { timeout: 15000 });
     await page.click('[data-testid="SideNav_NewTweet_Button"]');
     await randomDelay(1000, 2000);
 
     // Type post
-    await page.waitForSelector('[data-testid="tweetTextarea_0"]', { timeout: 10000 });
+    await page.waitForSelector('[data-testid="tweetTextarea_0"]', { timeout: 15000 });
     await humanType(page, '[data-testid="tweetTextarea_0"]', text);
     await randomDelay(1000, 2000);
 
@@ -574,13 +574,17 @@ async function postToCommunity(communityId, text) {
     await saveCookies(page);
 
     return { success: true, text, communityId };
-  } catch (err) {
-    console.error('[x-browser] Community post error:', err.message);
-    const screenshotPath = path.join(DATA_DIR, `x-error-${Date.now()}.png`);
-    await page.screenshot({ path: screenshotPath });
-
+  }, 3, 5000, 'postToCommunity').catch(async err => {
+    console.error('[x-browser] Community post failed after retries:', err.message);
+    try {
+      const { page } = await initBrowser().catch(() => ({}));
+      if (page) {
+        const screenshotPath = path.join(DATA_DIR, `x-error-${Date.now()}.png`);
+        await page.screenshot({ path: screenshotPath });
+      }
+    } catch (e) {}
     return { success: false, error: err.message };
-  }
+  });
 }
 
 /**
