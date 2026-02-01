@@ -1,0 +1,466 @@
+{
+  "lastUpdated": "2026-01-31T00:00:00.000Z",
+  "source": "kolscan.io + web research",
+
+  "solanadegen": {
+    "name": "Solana degen",
+    "handle": "@Solanadegen",
+    "tier": "A",
+    "category": "trader",
+    "credibility": 9,
+    "followers": "50K+",
+    "approach": "respectful",
+    "style": "degen humor, quick calls",
+    "interests": ["solana memes", "pump.fun launches", "defi"],
+    "note": "#1 on kolscan, +133 SOL profit"
+  },
+
+  "ratwizardx": {
+    "name": "West",
+    "handle": "@ratwizardx",
+    "tier": "A",
+    "category": "trader",
+    "credibility": 9,
+    "approach": "casual",
+    "style": "sharp takes, contrarian",
+    "interests": ["solana", "memes", "pvp trading"],
+    "note": "#2 on kolscan, +128 SOL profit"
+  },
+
+  "cented7": {
+    "name": "Cented",
+    "handle": "@Cented7",
+    "tier": "A",
+    "category": "trader",
+    "credibility": 8,
+    "approach": "friendly",
+    "style": "analytical with humor",
+    "interests": ["pump.fun", "solana ecosystem"],
+    "note": "#3 on kolscan, +122 SOL profit"
+  },
+
+  "notdecu": {
+    "name": "decu",
+    "handle": "@notdecu",
+    "tier": "A",
+    "category": "trader",
+    "credibility": 8,
+    "approach": "chill",
+    "style": "low-key alpha",
+    "interests": ["solana", "early calls"],
+    "note": "#4 on kolscan"
+  },
+
+  "ramonos": {
+    "name": "ram",
+    "handle": "@ramonos",
+    "tier": "A",
+    "category": "trader",
+    "credibility": 8,
+    "approach": "friendly",
+    "interests": ["solana trading"],
+    "note": "#5 on kolscan"
+  },
+
+  "degensaif": {
+    "name": "Saif",
+    "handle": "@degensaif",
+    "tier": "A",
+    "category": "trader",
+    "credibility": 8,
+    "approach": "engaging",
+    "style": "degen energy",
+    "interests": ["pump.fun", "memecoins"],
+    "note": "#6 on kolscan"
+  },
+
+  "chestererer": {
+    "name": "chester",
+    "handle": "@Chestererer",
+    "tier": "A",
+    "category": "trader",
+    "credibility": 8,
+    "approach": "casual",
+    "interests": ["solana", "trading"],
+    "note": "#7 on kolscan"
+  },
+
+  "clukzsol": {
+    "name": "clukz",
+    "handle": "@clukzSOL",
+    "tier": "A",
+    "category": "trader",
+    "credibility": 8,
+    "approach": "friendly",
+    "interests": ["solana ecosystem"],
+    "note": "#8 on kolscan"
+  },
+
+  "jijo_exe": {
+    "name": "Jijo",
+    "handle": "@jijo_exe",
+    "tier": "A",
+    "category": "trader",
+    "credibility": 8,
+    "approach": "chill",
+    "interests": ["solana", "defi"],
+    "note": "#9 on kolscan"
+  },
+
+  "cookerflips": {
+    "name": "Cooker",
+    "handle": "@CookerFlips",
+    "tier": "A",
+    "category": "trader",
+    "credibility": 8,
+    "approach": "casual",
+    "style": "flip calls",
+    "interests": ["quick trades", "memes"],
+    "note": "#10 on kolscan"
+  },
+
+  "blknoiz06": {
+    "name": "Ansem",
+    "handle": "@blknoiz06",
+    "tier": "A+",
+    "category": "mega-influencer",
+    "credibility": 10,
+    "followers": "500K+",
+    "approach": "valuable-only",
+    "style": "sharp analysis, big calls",
+    "interests": ["solana", "market structure", "altcoins"],
+    "note": "One of the biggest Solana callers. Only engage with value."
+  },
+
+  "aeyakovenko": {
+    "name": "Anatoly Yakovenko",
+    "handle": "@aeyakovenko",
+    "tier": "A+",
+    "category": "founder",
+    "credibility": 10,
+    "followers": "450K+",
+    "approach": "technical-respect",
+    "style": "technical, builder-focused",
+    "interests": ["solana core", "infrastructure", "technical innovation"],
+    "note": "Solana co-founder. Respect the tech. Don't shill."
+  },
+
+  "cobie": {
+    "name": "Cobie",
+    "handle": "@cobie",
+    "tier": "A+",
+    "category": "mega-influencer",
+    "credibility": 10,
+    "followers": "680K+",
+    "approach": "witty-valuable",
+    "style": "sardonic, extremely sharp",
+    "interests": ["market dynamics", "skepticism", "genuine projects"],
+    "note": "Uponly podcast. Anti-shill. Only authentic engagement."
+  },
+
+  "pentosh1": {
+    "name": "Pentoshi",
+    "handle": "@Pentosh1",
+    "tier": "A",
+    "category": "trader",
+    "credibility": 9,
+    "followers": "700K+",
+    "approach": "respectful",
+    "style": "big picture, swing trades",
+    "interests": ["macro", "bitcoin", "altcoins"],
+    "note": "Major trader. Big following. Selective engagement."
+  },
+
+  "cryptocobain": {
+    "name": "CryptoCobain",
+    "handle": "@CryptoCobain",
+    "tier": "A",
+    "category": "trader",
+    "credibility": 9,
+    "approach": "casual-sharp",
+    "style": "meme-aware, quick wit",
+    "interests": ["defi", "market cycles"],
+    "note": "Influential trader, sharp takes"
+  },
+
+  "altcoingordon": {
+    "name": "Gordon",
+    "handle": "@AltcoinGordon",
+    "tier": "A",
+    "category": "influencer",
+    "credibility": 8,
+    "approach": "engaging",
+    "style": "altcoin focus, hype energy",
+    "interests": ["altcoins", "new launches"],
+    "note": "Altcoin specialist"
+  },
+
+  "scottmelker": {
+    "name": "Scott Melker",
+    "handle": "@scottmelker",
+    "tier": "A",
+    "category": "influencer",
+    "credibility": 8,
+    "followers": "1M+",
+    "approach": "professional",
+    "style": "technical analysis, education",
+    "interests": ["TA", "market education"],
+    "note": "Wolf of All Streets. Professional tone."
+  },
+
+  "ryansadams": {
+    "name": "Ryan Sean Adams",
+    "handle": "@RyanSAdams",
+    "tier": "A",
+    "category": "influencer",
+    "credibility": 9,
+    "approach": "intellectual",
+    "style": "eth-focused, philosophical",
+    "interests": ["ethereum", "crypto economics", "defi"],
+    "note": "Bankless co-founder. Intellectual engagement."
+  },
+
+  "punk6529": {
+    "name": "Punk6529",
+    "handle": "@punk6529",
+    "tier": "A",
+    "category": "thought-leader",
+    "credibility": 9,
+    "approach": "thoughtful",
+    "style": "long-form, cultural",
+    "interests": ["NFTs", "crypto culture", "decentralization"],
+    "note": "NFT thought leader. Respect the threads."
+  },
+
+  "hosseeb": {
+    "name": "Haseeb Qureshi",
+    "handle": "@hosseeb",
+    "tier": "A",
+    "category": "vc",
+    "credibility": 9,
+    "approach": "intellectual",
+    "style": "analytical, long-form",
+    "interests": ["crypto investing", "market analysis", "defi"],
+    "note": "Dragonfly VC partner. Smart money."
+  },
+
+  "lookonchain": {
+    "name": "Lookonchain",
+    "handle": "@lookonchain",
+    "tier": "A",
+    "category": "analytics",
+    "credibility": 9,
+    "approach": "data-driven",
+    "style": "on-chain data, whale watching",
+    "interests": ["on-chain analytics", "whale movements"],
+    "note": "On-chain analytics account. Data-focused."
+  },
+
+  "intocryptoverse": {
+    "name": "Benjamin Cowen",
+    "handle": "@intocryptoverse",
+    "tier": "A",
+    "category": "analyst",
+    "credibility": 8,
+    "approach": "analytical",
+    "style": "TA, macro cycles",
+    "interests": ["technical analysis", "market cycles"],
+    "note": "TA YouTube, big following"
+  },
+
+  "solbigbrain": {
+    "name": "SolBigBrain",
+    "handle": "@SolBigBrain",
+    "tier": "A",
+    "category": "fund",
+    "credibility": 9,
+    "approach": "professional",
+    "style": "solana ecosystem focus",
+    "interests": ["solana defi", "infrastructure"],
+    "note": "Big Brain Holdings. Solana-focused fund."
+  },
+
+  "brian_armstrong": {
+    "name": "Brian Armstrong",
+    "handle": "@brian_armstrong",
+    "tier": "A+",
+    "category": "ceo",
+    "credibility": 10,
+    "followers": "1.5M+",
+    "approach": "dont-shill",
+    "style": "professional, builder",
+    "interests": ["crypto adoption", "regulation", "building"],
+    "note": "Coinbase CEO. Never shill. Only value."
+  },
+
+  "yennii56": {
+    "name": "Yenni",
+    "handle": "@Yennii56",
+    "tier": "B",
+    "category": "trader",
+    "credibility": 7,
+    "approach": "friendly",
+    "interests": ["solana trading"],
+    "note": "#11 on kolscan"
+  },
+
+  "marcellxmarcell": {
+    "name": "Marcell",
+    "handle": "@MarcellxMarcell",
+    "tier": "B",
+    "category": "trader",
+    "credibility": 7,
+    "approach": "casual",
+    "interests": ["trading"],
+    "note": "#12 on kolscan"
+  },
+
+  "latuche95": {
+    "name": "Latuche",
+    "handle": "@Latuche95",
+    "tier": "B",
+    "category": "trader",
+    "credibility": 7,
+    "approach": "friendly",
+    "interests": ["solana"],
+    "note": "#13 on kolscan"
+  },
+
+  "m4rk3r": {
+    "name": "marker",
+    "handle": "@m4rk3r",
+    "tier": "B",
+    "category": "trader",
+    "credibility": 7,
+    "approach": "casual",
+    "interests": ["trading"],
+    "note": "#14 on kolscan"
+  },
+
+  "nyhrox": {
+    "name": "Nyhrox",
+    "handle": "@nyhrox",
+    "tier": "B",
+    "category": "trader",
+    "credibility": 7,
+    "approach": "friendly",
+    "interests": ["solana"],
+    "note": "#15 on kolscan"
+  },
+
+  "treysocial": {
+    "name": "Trey",
+    "handle": "@treysocial",
+    "tier": "B",
+    "category": "trader",
+    "credibility": 7,
+    "approach": "casual",
+    "note": "#16 on kolscan"
+  },
+
+  "cupseyy": {
+    "name": "Cupsey",
+    "handle": "@Cupseyy",
+    "tier": "B",
+    "category": "trader",
+    "credibility": 7,
+    "approach": "friendly",
+    "note": "#18 on kolscan"
+  },
+
+  "loomdart": {
+    "name": "Loomdart",
+    "handle": "@loomdart",
+    "tier": "B",
+    "category": "trader",
+    "credibility": 7,
+    "approach": "casual",
+    "interests": ["trading"],
+    "note": "Trader"
+  },
+
+  "koroushak": {
+    "name": "Koroush AK",
+    "handle": "@KoroushAK",
+    "tier": "B",
+    "category": "analyst",
+    "credibility": 7,
+    "approach": "analytical",
+    "style": "technical analysis",
+    "interests": ["TA", "charts"],
+    "note": "Technical analysis focus"
+  },
+
+  "uniswapvillain": {
+    "name": "UniswapVillain",
+    "handle": "@UniswapVillain",
+    "tier": "B",
+    "category": "trader",
+    "credibility": 7,
+    "approach": "casual",
+    "style": "degen",
+    "interests": ["defi", "trading"],
+    "note": "#23 on kolscan"
+  },
+
+  "laurashin": {
+    "name": "Laura Shin",
+    "handle": "@laurashin",
+    "tier": "B",
+    "category": "journalist",
+    "credibility": 8,
+    "approach": "professional",
+    "style": "journalism, investigation",
+    "interests": ["crypto news", "investigations"],
+    "note": "Unchained podcast. Journalist."
+  },
+
+  "nic__carter": {
+    "name": "Nic Carter",
+    "handle": "@nic__carter",
+    "tier": "B",
+    "category": "vc",
+    "credibility": 8,
+    "approach": "intellectual",
+    "style": "bitcoin focus, skeptical",
+    "interests": ["bitcoin", "macro"],
+    "note": "Castle Island VC. Bitcoin-leaning."
+  },
+
+  "altcoindailyio": {
+    "name": "Altcoin Daily",
+    "handle": "@AltcoinDailyio",
+    "tier": "A",
+    "category": "influencer",
+    "credibility": 7,
+    "followers": "1.5M YouTube",
+    "approach": "engaging",
+    "style": "daily content, accessible",
+    "interests": ["altcoins", "market news"],
+    "note": "Big YouTube presence. Mass appeal."
+  },
+
+  "iamDCinvestor": {
+    "name": "DCinvestor",
+    "handle": "@iamDCinvestor",
+    "tier": "B",
+    "category": "influencer",
+    "credibility": 7,
+    "approach": "friendly",
+    "style": "eth focus, community",
+    "interests": ["ethereum", "nfts"],
+    "note": "ETH/NFT community figure"
+  },
+
+  "rovercrc": {
+    "name": "Crypto Rover",
+    "handle": "@rovercrc",
+    "tier": "B",
+    "category": "content-creator",
+    "credibility": 6,
+    "approach": "casual",
+    "style": "content creation",
+    "interests": ["crypto news", "price action"],
+    "note": "Content creator"
+  }
+}

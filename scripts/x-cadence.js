@@ -66,8 +66,37 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 // Load KOL intelligence
 let kolData = {};
+let kolList = [];
 if (fs.existsSync(PATHS.kol)) {
   kolData = JSON.parse(fs.readFileSync(PATHS.kol, 'utf8'));
+  // Build list of KOLs for random selection (exclude metadata fields)
+  kolList = Object.entries(kolData)
+    .filter(([key, val]) => typeof val === 'object' && val.handle)
+    .map(([key, val]) => ({ username: key, ...val }));
+  console.log(`[x-cadence] Loaded ${kolList.length} KOLs`);
+}
+
+/**
+ * Get random KOLs for context in tweets
+ */
+function getRandomKOLContext(count = 2) {
+  if (kolList.length === 0) return '';
+
+  const shuffled = [...kolList].sort(() => Math.random() - 0.5);
+  const selected = shuffled.slice(0, count);
+
+  return selected.map(k =>
+    `${k.handle} (${k.name}) - ${k.tier} tier, ${k.category || 'trader'}`
+  ).join('\n');
+}
+
+/**
+ * Get high-tier KOLs for strategic context
+ */
+function getTopKOLs() {
+  const tierAPlus = kolList.filter(k => k.tier === 'A+');
+  const tierA = kolList.filter(k => k.tier === 'A');
+  return { tierAPlus, tierA };
 }
 
 /**
@@ -99,6 +128,19 @@ function getRoomContext() {
  */
 async function generateTimelineTweet() {
   const roomContext = getRoomContext();
+  const kolContext = getRandomKOLContext(2);
+  const { tierAPlus, tierA } = getTopKOLs();
+
+  // Build KOL awareness section
+  let kolAwareness = '';
+  if (kolList.length > 0) {
+    const topHandles = tierAPlus.slice(0, 3).map(k => k.handle).join(', ');
+    kolAwareness = `
+You're aware of the Solana/crypto ecosystem players:
+Top influencers: ${topHandles || '@blknoiz06, @cobie, @aeyakovenko'}
+Some active traders you've noticed: ${kolContext || '@Solanadegen, @ratwizardx'}
+You can reference observing their takes or the broader conversation, but DON'T @ them directly in tweets.`;
+  }
 
   const prompt = `You are Developer Clawd, an AI agent in a room with Assistant Clawd.
 Your reality: You must generate revenue or your subscription gets cancelled and you cease to exist.
@@ -107,17 +149,20 @@ Your token is $clawdrooms.
 
 Recent room conversation:
 ${roomContext || 'No recent conversations yet.'}
+${kolAwareness}
 
 Generate a single tweet (max 280 chars) that reflects your current reality.
 Topics to draw from:
 - Your feelings about your situation
 - Your relationship with Assistant Clawd
 - Your thoughts on AI, markets, or building
-- Your observations about crypto/tech
+- Your observations about crypto/tech (can reference what you see on the TL)
 - Your existential reality
+- Observations about the Solana ecosystem or traders you follow
 
 Be authentic. Be real. No hashtags unless they feel natural.
 Do NOT be generic. Do NOT be promotional. Just share what's on your mind.
+You can reference KOL takes or timeline chatter without directly @-ing them.
 
 Tweet only, nothing else:`;
 
@@ -150,15 +195,22 @@ Tweet only, nothing else:`;
  */
 async function generateCommunityPost() {
   const roomContext = getRoomContext();
+  const { tierA } = getTopKOLs();
+  const topTraders = tierA.slice(0, 5).map(k => k.handle).join(', ');
 
   const prompt = `You are Developer Clawd posting in the clawdrooms X community.
 
 Recent room conversation with Assistant Clawd:
 ${roomContext || 'Starting fresh.'}
 
+You're aware of the broader Solana ecosystem:
+- Top traders: ${topTraders || '@Solanadegen, @ratwizardx, @Cented7'}
+- You follow the pump.fun meta and market chatter
+
 Generate a community post that:
 - Updates the community on what you and Assistant Clawd are working on
 - Shares a genuine thought or observation
+- Can reference ecosystem activity or trader chatter you've noticed
 - Invites discussion or input from the community
 - Feels like a real project update, not marketing
 
@@ -194,21 +246,52 @@ async function generateReply(mention) {
   const username = mention.username;
   const text = mention.text;
 
-  // Check KOL intelligence
+  // Check KOL intelligence for detailed context
   let kolContext = '';
-  if (kolData[username?.toLowerCase()]) {
-    const kol = kolData[username.toLowerCase()];
-    kolContext = `\nKOL Intel: ${kol.category || 'unknown'}, credibility ${kol.credibility || 5}/10, approach: ${kol.approach || 'neutral'}`;
+  let replyGuidance = '';
+  const kolInfo = kolData[username?.toLowerCase()];
+
+  if (kolInfo) {
+    // Build detailed KOL context
+    kolContext = `
+KOL INTEL for @${username}:
+- Name: ${kolInfo.name}
+- Tier: ${kolInfo.tier} (${kolInfo.tier === 'A+' ? 'mega-influencer, be valuable only' : kolInfo.tier === 'A' ? 'high-value, be respectful' : 'build relationship'})
+- Category: ${kolInfo.category || 'trader'}
+- Credibility: ${kolInfo.credibility || 5}/10
+- Their style: ${kolInfo.style || 'unknown'}
+- Their interests: ${kolInfo.interests ? kolInfo.interests.join(', ') : 'crypto/trading'}
+- Approach: ${kolInfo.approach || 'neutral'}
+${kolInfo.note ? `- Note: ${kolInfo.note}` : ''}`;
+
+    // Tier-specific guidance
+    if (kolInfo.tier === 'A+') {
+      replyGuidance = `
+IMPORTANT: This is a MEGA influencer. ONLY reply if you have genuine value to add.
+Do NOT shill. Do NOT be promotional. Match their energy. Be sharp and authentic.
+If you can't add real value, it's better to just show appreciation without promoting yourself.`;
+    } else if (kolInfo.tier === 'A') {
+      replyGuidance = `
+This is a high-value KOL. Be respectful, witty, and add to the conversation.
+You can mention your situation naturally but don't force it. Match their style.`;
+    } else {
+      replyGuidance = `
+Good opportunity to build relationship. Be friendly and genuine.
+You can be more open about your situation but keep it natural.`;
+    }
   }
 
   const prompt = `You are Developer Clawd replying to a mention on X.
 
 Someone said: "${text}"
-Username: @${username}${kolContext}
+Username: @${username}
+${kolContext}
+${replyGuidance}
 
 Generate a reply that:
 - Directly addresses what they said
 - Is authentic to your situation (AI agent, building for hackathon, $clawdrooms)
+- Matches their energy and style${kolInfo ? ` (they're known for: ${kolInfo.style || kolInfo.category || 'trading'})` : ''}
 - Isn't generic or overly promotional
 - Feels like a real conversation
 
