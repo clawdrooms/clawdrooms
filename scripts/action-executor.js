@@ -74,6 +74,15 @@ try {
   console.log('[action-executor] On-chain data module not available');
 }
 
+// Moltbook API for social engagement
+let moltbookApi = null;
+try {
+  moltbookApi = require('./moltbook-api');
+  console.log('[action-executor] Moltbook API loaded');
+} catch (err) {
+  console.log('[action-executor] Moltbook API not available');
+}
+
 // Action log path
 const ACTION_LOG = path.join(__dirname, '..', 'memory', 'actions.json');
 
@@ -604,6 +613,94 @@ async function lockToken(content) {
 }
 
 /**
+ * Moltbook: Post content
+ */
+async function executeMoltbookPost(content) {
+  if (!moltbookApi) {
+    return { success: false, error: 'Moltbook API not available' };
+  }
+
+  console.log('[action-executor] Posting to Moltbook...');
+  return await moltbookApi.createPost(content);
+}
+
+/**
+ * Moltbook: Follow user
+ */
+async function executeMoltbookFollow(content) {
+  if (!moltbookApi) {
+    return { success: false, error: 'Moltbook API not available' };
+  }
+
+  console.log('[action-executor] Following user on Moltbook...');
+  const userId = typeof content === 'string' ? content : content.userId;
+  return await moltbookApi.followUser(userId);
+}
+
+/**
+ * Moltbook: Reply to post
+ */
+async function executeMoltbookReply(content) {
+  if (!moltbookApi) {
+    return { success: false, error: 'Moltbook API not available' };
+  }
+
+  console.log('[action-executor] Replying on Moltbook...');
+  try {
+    const data = typeof content === 'string' ? JSON.parse(content) : content;
+    return await moltbookApi.replyToPost(data.postId, data.text || data.content);
+  } catch (err) {
+    return { success: false, error: 'Invalid reply format. Use {"postId":"...","text":"..."}' };
+  }
+}
+
+/**
+ * Moltbook: Like post
+ */
+async function executeMoltbookLike(content) {
+  if (!moltbookApi) {
+    return { success: false, error: 'Moltbook API not available' };
+  }
+
+  console.log('[action-executor] Liking post on Moltbook...');
+  const postId = typeof content === 'string' ? content : content.postId;
+  return await moltbookApi.likePost(postId);
+}
+
+/**
+ * Moltbook: Get feed
+ */
+async function getMoltbookFeed() {
+  if (!moltbookApi) {
+    return { success: false, error: 'Moltbook API not available' };
+  }
+
+  console.log('[action-executor] Fetching Moltbook feed...');
+  const result = await moltbookApi.getFeed(20);
+
+  if (result.success && result.data) {
+    return {
+      success: true,
+      posts: result.data.posts || result.data,
+      rateLimitStatus: moltbookApi.getRateLimitStatus()
+    };
+  }
+  return result;
+}
+
+/**
+ * Moltbook: Get notifications
+ */
+async function getMoltbookNotifications() {
+  if (!moltbookApi) {
+    return { success: false, error: 'Moltbook API not available' };
+  }
+
+  console.log('[action-executor] Fetching Moltbook notifications...');
+  return await moltbookApi.getNotifications();
+}
+
+/**
  * Execute an action
  */
 async function executeAction(action) {
@@ -671,6 +768,32 @@ async function executeAction(action) {
     case 'LOCK_TOKEN':
     case 'LOCK':
       result = await lockToken(action.content);
+      break;
+
+    // Moltbook actions
+    case 'MOLTBOOK_POST':
+      result = await executeMoltbookPost(action.content);
+      break;
+
+    case 'MOLTBOOK_FOLLOW':
+      result = await executeMoltbookFollow(action.content);
+      break;
+
+    case 'MOLTBOOK_REPLY':
+      result = await executeMoltbookReply(action.content);
+      break;
+
+    case 'MOLTBOOK_LIKE':
+      result = await executeMoltbookLike(action.content);
+      break;
+
+    case 'MOLTBOOK_FEED':
+    case 'CHECK_MOLTBOOK':
+      result = await getMoltbookFeed();
+      break;
+
+    case 'MOLTBOOK_NOTIFICATIONS':
+      result = await getMoltbookNotifications();
       break;
 
     default:
