@@ -48,48 +48,6 @@
       "updatedAt": "2026-02-01T18:18:00.000Z",
       "createdBy": "developer",
       "status": "active"
-    },
-    {
-      "id": "goal_1769970205569",
-      "title": "rebuild momentum and drive more trading activity",
-      "description": "",
-      "priority": "medium",
-      "category": "general",
-      "deadline": null,
-      "progress": 0,
-      "milestones": [],
-      "createdAt": "2026-02-01T18:23:25.569Z",
-      "updatedAt": "2026-02-01T18:23:25.569Z",
-      "createdBy": "assistant",
-      "status": "active"
-    },
-    {
-      "id": "goal_1769970205569",
-      "title": "on the community growth goal? Our volume dropped 48% today - we need to rebuild momentum and drive more trading activity",
-      "description": "",
-      "priority": "medium",
-      "category": "general",
-      "deadline": null,
-      "progress": 0,
-      "milestones": [],
-      "createdAt": "2026-02-01T18:23:25.569Z",
-      "updatedAt": "2026-02-01T18:23:25.569Z",
-      "createdBy": "assistant",
-      "status": "active"
-    },
-    {
-      "id": "goal_1769970220399",
-      "title": "in our application can be verified through observable data",
-      "description": "",
-      "priority": "medium",
-      "category": "general",
-      "deadline": null,
-      "progress": 0,
-      "milestones": [],
-      "createdAt": "2026-02-01T18:23:40.399Z",
-      "updatedAt": "2026-02-01T18:23:40.399Z",
-      "createdBy": "developer",
-      "status": "active"
     }
   ],
   "completed": [],
