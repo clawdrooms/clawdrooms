@@ -12,7 +12,7 @@ const path = require('path');
 
 // Configuration
 const MOLTBOOK_API_KEY = process.env.MOLTBOOK_API_KEY_DEV;
-const MOLTBOOK_BASE_URL = 'https://api.moltbook.com/v1'; // Adjust if different
+const MOLTBOOK_BASE_URL = process.env.MOLTBOOK_API_URL || 'https://www.moltbook.com/api/v1';
 
 // Rate limiting state
 const RATE_LIMIT_FILE = path.join(__dirname, '..', 'memory', 'moltbook-rate-limits.json');
@@ -212,6 +212,14 @@ async function getMyPosts(limit = 10) {
 }
 
 /**
+ * Update profile (bio/description)
+ */
+async function updateProfile(bio) {
+  console.log('[moltbook] Updating profile...');
+  return await moltbookRequest('/me/profile', 'PATCH', { bio });
+}
+
+/**
  * Search for users to follow
  */
 async function searchUsers(query, limit = 10) {
@@ -285,5 +293,6 @@ module.exports = {
   getMyPosts,
   searchUsers,
   getSuggestedUsers,
-  getRateLimitStatus
+  getRateLimitStatus,
+  updateProfile
 };

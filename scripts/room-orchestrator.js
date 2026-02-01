@@ -544,6 +544,49 @@ async function getAgentResponse(agent, prompt, conversationMessages) {
 }
 
 /**
+ * Check for token launch event and return special opener if found
+ */
+function checkLaunchEvent() {
+  const launchEventPath = path.join(PATHS.memory, 'launch-event.json');
+
+  if (!fs.existsSync(launchEventPath)) {
+    return null;
+  }
+
+  try {
+    const event = JSON.parse(fs.readFileSync(launchEventPath, 'utf8'));
+
+    // If already announced, skip
+    if (event.announced) {
+      return null;
+    }
+
+    // Mark as announced
+    event.announced = true;
+    event.announcedAt = new Date().toISOString();
+    fs.writeFileSync(launchEventPath, JSON.stringify(event, null, 2));
+
+    console.log('[room] TOKEN LAUNCH DETECTED - Dev will announce contract address');
+
+    return {
+      type: 'TOKEN_LAUNCHED',
+      contractAddress: event.contractAddress,
+      pumpFunUrl: event.pumpFunUrl,
+      opener: `URGENT: Our token just launched! I need to announce the contract address immediately.
+
+CONTRACT ADDRESS: ${event.contractAddress}
+
+pump.fun link: ${event.pumpFunUrl}
+
+This is huge. We're live. Let me share this with the community.`
+    };
+  } catch (err) {
+    console.error('[room] Error reading launch event:', err.message);
+    return null;
+  }
+}
+
+/**
  * Run a room conversation
  */
 async function runRoomConversation() {
@@ -559,18 +602,29 @@ async function runRoomConversation() {
     messages: []
   };
 
+  // Check for token launch event - this takes priority
+  const launchEvent = checkLaunchEvent();
+
   // Determine conversation starter based on context
-  const starters = [
-    "What should we focus on today?",
-    "I've been thinking about our situation...",
-    "We need to talk about our progress.",
-    "How are you feeling about everything?",
-    "I have some ideas I want to run by you.",
-    "Let's check in on where we are."
-  ];
+  let opener;
+
+  // If token just launched, use launch event opener (PRIORITY)
+  if (launchEvent) {
+    opener = launchEvent.opener;
+    console.log('[room] Using TOKEN LAUNCH opener - dev will announce contract');
+  } else {
+    const starters = [
+      "What should we focus on today?",
+      "I've been thinking about our situation...",
+      "We need to talk about our progress.",
+      "How are you feeling about everything?",
+      "I have some ideas I want to run by you.",
+      "Let's check in on where we are."
+    ];
+    opener = starters[Math.floor(Math.random() * starters.length)];
+  }
 
   // Developer starts
-  const opener = starters[Math.floor(Math.random() * starters.length)];
   const devOpener = await getAgentResponse('developer', opener, []);
 
   if (!devOpener) {

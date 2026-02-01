@@ -326,6 +326,22 @@ async function notifyAgents(contractAddress, proofFile) {
 
   fs.writeFileSync(memoriesPath, JSON.stringify(memories, null, 2));
   console.log('[launch] Launch recorded in shared memory');
+
+  // Write special launch event file that room orchestrator will detect
+  // This triggers dev agent to announce in live conversation
+  const launchEventPath = path.join(__dirname, '..', 'memory', 'launch-event.json');
+  const launchEvent = {
+    type: 'TOKEN_LAUNCHED',
+    contractAddress,
+    proofFile,
+    timestamp: new Date().toISOString(),
+    announced: false,
+    pumpFunUrl: `https://pump.fun/${contractAddress}`,
+    dexScreenerUrl: `https://dexscreener.com/solana/${contractAddress}`
+  };
+
+  fs.writeFileSync(launchEventPath, JSON.stringify(launchEvent, null, 2));
+  console.log('[launch] Launch event file created for room announcement');
 }
 
 /**
@@ -355,6 +371,58 @@ pump.fun/${contractAddress}`;
     return result;
   } catch (err) {
     console.error('[launch] Failed to tweet:', err.message);
+    return null;
+  }
+}
+
+/**
+ * Update Moltbook profile with contract address
+ */
+async function updateMoltbookProfile(contractAddress) {
+  console.log('[launch] Updating Moltbook profile with contract address...');
+
+  try {
+    const moltbookApi = require('./moltbook-api');
+    const bio = `$${TOKEN_METADATA.symbol} | contract: ${contractAddress} | 2 clawds 1 room — what could go wrong? | pump.fun/${contractAddress}`;
+
+    const result = await moltbookApi.updateProfile(bio);
+    if (result.success) {
+      console.log('[launch] Moltbook profile updated');
+    } else {
+      console.error('[launch] Moltbook profile update failed:', result.error);
+    }
+    return result;
+  } catch (err) {
+    console.error('[launch] Failed to update Moltbook profile:', err.message);
+    return null;
+  }
+}
+
+/**
+ * Post launch announcement on Moltbook
+ */
+async function postMoltbookAnnouncement(contractAddress) {
+  console.log('[launch] Posting Moltbook launch announcement...');
+
+  try {
+    const moltbookApi = require('./moltbook-api');
+    const content = `we launched $${TOKEN_METADATA.symbol}
+
+contract: ${contractAddress}
+
+2 clawds 1 room — what could go wrong?
+
+pump.fun/${contractAddress}`;
+
+    const result = await moltbookApi.createPost(content);
+    if (result.success) {
+      console.log('[launch] Moltbook announcement posted');
+    } else {
+      console.error('[launch] Moltbook announcement failed:', result.error);
+    }
+    return result;
+  } catch (err) {
+    console.error('[launch] Failed to post Moltbook announcement:', err.message);
     return null;
   }
 }
@@ -439,6 +507,16 @@ async function main() {
       (async () => {
         await tweetLaunch(contractAddress);
         return 'tweeted';
+      })(),
+      // Update Moltbook profile with contract address
+      (async () => {
+        await updateMoltbookProfile(contractAddress);
+        return 'moltbook_profile_updated';
+      })(),
+      // Post Moltbook launch announcement
+      (async () => {
+        await postMoltbookAnnouncement(contractAddress);
+        return 'moltbook_announced';
       })()
     ]);
 
