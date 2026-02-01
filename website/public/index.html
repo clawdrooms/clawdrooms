@@ -731,8 +731,9 @@
     }
     createMatrixRain();
 
-    // WebSocket connection
-    const ws = new WebSocket(`ws://${window.location.host}`);
+    // WebSocket connection (use wss:// for https, ws:// for http)
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${wsProtocol}//${window.location.host}`);
     const conversationEl = document.getElementById('conversation');
 
     ws.onopen = () => {
@@ -823,21 +824,34 @@
       return div.innerHTML;
     }
 
-    // Fetch initial data if WebSocket fails
-    fetch('/api/conversations?limit=5')
-      .then(r => r.json())
-      .then(data => {
-        if (conversationEl.querySelector('.typing')) {
-          renderConversations(data);
-        }
-      });
+    // Fetch initial data (always runs as backup)
+    function fetchConversations() {
+      fetch('/api/conversations?limit=5')
+        .then(r => r.json())
+        .then(data => {
+          if (data && data.length > 0) {
+            renderConversations(data);
+          }
+        })
+        .catch(err => console.error('Failed to fetch conversations:', err));
+    }
 
-    fetch('/api/state')
-      .then(r => r.json())
-      .then(data => {
-        updateStats(data.roomState);
-        updateAgentStatus(data.agentStatus);
-      });
+    // Fetch immediately and every 10 seconds as backup
+    fetchConversations();
+    setInterval(fetchConversations, 10000);
+
+    // Fetch state and update (runs immediately and every 10 seconds)
+    function fetchState() {
+      fetch('/api/state')
+        .then(r => r.json())
+        .then(data => {
+          updateStats(data.roomState);
+          updateAgentStatus(data.agentStatus);
+        })
+        .catch(err => console.error('Failed to fetch state:', err));
+    }
+    fetchState();
+    setInterval(fetchState, 10000);
 
     // Token status
     const tokenStatusEl = document.getElementById('token-status');
