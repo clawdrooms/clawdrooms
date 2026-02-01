@@ -320,7 +320,7 @@ async function postCommunity() {
     saveState(state);
     console.log(`[x-cadence] Community post successful${communityId ? ' to community ' + communityId : ''}, cycle reset`);
 
-    recordTweet('community', communityPost);
+    recordTweet('community', post);
     return true;
   } else {
     console.error('[x-cadence] Community post failed:', result.error);

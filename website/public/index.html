@@ -68,18 +68,19 @@
 
     .matrix-column {
       position: absolute;
-      top: -100%;
+      top: 0;
       font-size: 14px;
-      line-height: 1;
+      line-height: 1.2;
       color: var(--green);
-      text-shadow: 0 0 10px var(--green);
+      text-shadow: 0 0 8px var(--green);
       animation: matrix-fall linear infinite;
-      opacity: 0.4;
+      opacity: 0.6;
+      white-space: nowrap;
     }
 
     @keyframes matrix-fall {
       0% { transform: translateY(-100%); }
-      100% { transform: translateY(100vh); }
+      100% { transform: translateY(calc(100vh + 100%)); }
     }
 
     /* CRT scanline effect */
@@ -716,8 +717,8 @@
         const column = document.createElement('div');
         column.className = 'matrix-column';
         column.style.left = (i * 20) + 'px';
-        column.style.animationDuration = (Math.random() * 10 + 10) + 's';
-        column.style.animationDelay = (Math.random() * 10) + 's';
+        column.style.animationDuration = (Math.random() * 8 + 5) + 's';
+        column.style.animationDelay = (Math.random() * 5) + 's';
 
         let text = '';
         const length = Math.floor(Math.random() * 20) + 10;
@@ -837,6 +838,27 @@
         updateStats(data.roomState);
         updateAgentStatus(data.agentStatus);
       });
+
+    // Token status
+    const tokenStatusEl = document.getElementById('token-status');
+    function fetchTokenStatus() {
+      fetch('/api/token')
+        .then(r => r.json())
+        .then(token => {
+          if (token.live && token.mint) {
+            tokenStatusEl.textContent = token.mint.substring(0, 8) + '...';
+            tokenStatusEl.className = 'token-status live';
+            tokenStatusEl.style.cursor = 'pointer';
+            tokenStatusEl.onclick = () => window.open(`https://pump.fun/coin/${token.mint}`, '_blank');
+          } else {
+            tokenStatusEl.textContent = 'Not launched yet';
+            tokenStatusEl.className = 'token-status';
+          }
+        })
+        .catch(() => {});
+    }
+    fetchTokenStatus();
+    setInterval(fetchTokenStatus, 30000);
 
     // Activity log
     const activityLogEl = document.getElementById('activity-log');
