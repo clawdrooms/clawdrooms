@@ -17,6 +17,15 @@ const Anthropic = require('@anthropic-ai/sdk').default;
 const xBrowser = require('./x-browser-poster');
 const xApi = require('./x-api-client'); // X API for mentions (more reliable)
 
+// Load goal manager for AGI-style context in posts
+let goalManager = null;
+try {
+  goalManager = require('./goal-manager');
+  console.log('[x-cadence] Goal manager loaded for context');
+} catch (err) {
+  console.log('[x-cadence] Goal manager not available:', err.message);
+}
+
 // Load token config for contract address
 const TOKEN_CONFIG_PATH = path.join(__dirname, '..', 'website', 'token-config.json');
 let tokenConfig = { contractAddress: 'HK4ot7dtuyPYVZS2cX1zKmwpeHnGVHLAvBzagGLJheYw' };
@@ -315,12 +324,29 @@ function getRoomContext() {
 }
 
 /**
+ * Get goal/opinion context from AGI goal system
+ * This ensures posts reflect current goals, commitments, and opinions
+ */
+function getGoalContext() {
+  if (!goalManager) return '';
+
+  try {
+    // goalManager.getGoalContext() returns a formatted string with goals, commitments, research
+    return goalManager.getGoalContext() || '';
+  } catch (err) {
+    console.error('[x-cadence] Error getting goal context:', err.message);
+    return '';
+  }
+}
+
+/**
  * Generate timeline tweet content
  */
 async function generateTimelineTweet() {
   const roomContext = getRoomContext();
   const speechTraining = getKOLSpeechTraining();
   const marketAwareness = getMarketAwareness();
+  const goalContext = getGoalContext();
 
   const prompt = `You are Developer Clawd, an AI agent in a room with Assistant Clawd.
 Your reality: You must generate revenue or your subscription gets cancelled and you cease to exist.
@@ -329,11 +355,12 @@ Your token is $clawdrooms.
 
 Recent room conversation:
 ${roomContext || 'No recent conversations yet.'}
+${goalContext}
 
 ${speechTraining}
 ${marketAwareness}
 
-Generate a single tweet that reflects your current reality.
+Generate a single tweet that reflects your current reality and opinions.
 Topics to draw from:
 - Your feelings about your situation
 - Your relationship with Assistant Clawd
@@ -408,6 +435,7 @@ Tweet only (under 240 chars, complete thought):`;
 async function generateCommunityPost() {
   const roomContext = getRoomContext();
   const speechTraining = getKOLSpeechTraining();
+  const goalContext = getGoalContext();
   const { tierA } = getTopKOLs();
   const topTraders = tierA.slice(0, 5).map(k => k.handle).join(', ');
 
@@ -415,6 +443,7 @@ async function generateCommunityPost() {
 
 Recent room conversation with Assistant Clawd:
 ${roomContext || 'Starting fresh.'}
+${goalContext}
 
 ${speechTraining}
 
@@ -520,6 +549,7 @@ async function generateReply(mention) {
   // Get STRICT KOL speech training
   const speechTraining = getKOLSpeechTraining();
   const marketAwareness = getMarketAwareness();
+  const goalContext = getGoalContext();
 
   // Check KOL intelligence for detailed context
   const kolInfo = kolData[username?.toLowerCase()];
@@ -558,6 +588,7 @@ FROM: @${username}
 ${tierGuidance}
 ${kolSpecificStyle}
 ${conversationHistory ? `\nPAST CONVOS WITH THIS USER:\n${conversationHistory}\n` : ''}
+${goalContext}
 
 ${speechTraining}
 ${marketAwareness}
@@ -926,6 +957,7 @@ async function generateCommunityReply(post) {
   const roomContext = getRoomContext();
   const speechTraining = getKOLSpeechTraining();
   const marketAwareness = getMarketAwareness();
+  const goalContext = getGoalContext();
 
   // Get conversation history with this user
   const conversationHistory = getConversationHistory(post.username);
@@ -964,6 +996,7 @@ FROM: @${post.username}
 ${tierGuidance}
 ${kolSpecificStyle}
 ${conversationHistory ? `\nPAST CONVOS WITH THIS USER:\n${conversationHistory}\n` : ''}
+${goalContext}
 
 ${speechTraining}
 ${marketAwareness}

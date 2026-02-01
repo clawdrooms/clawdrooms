@@ -15,6 +15,16 @@ const path = require('path');
 const Anthropic = require('@anthropic-ai/sdk').default;
 const actionExecutor = require('./action-executor');
 
+// Load goal manager for AGI-style goal tracking
+let goalManager = null;
+try {
+  goalManager = require('./goal-manager');
+  goalManager.initializeDefaultGoals();
+  console.log('[room] Goal manager loaded');
+} catch (err) {
+  console.log('[room] Goal manager not available:', err.message);
+}
+
 // Load contextual intelligence for memory integration
 let contextualIntelligence = null;
 try {
@@ -476,6 +486,15 @@ function getSharedMemoryContext() {
     }
   }
 
+  // Add goal tracking context (AGI-style goal awareness)
+  if (goalManager) {
+    try {
+      context += goalManager.getGoalContext();
+    } catch (e) {
+      console.error('[room] Failed to get goal context:', e.message);
+    }
+  }
+
   return context;
 }
 
@@ -670,7 +689,13 @@ async function runRoomConversation() {
   if (launchEvent) {
     opener = launchEvent.opener;
     console.log('[room] Using TOKEN LAUNCH opener - dev will announce contract');
+  } else if (goalManager) {
+    // Use goal-oriented opener from AGI goal system
+    const goalOpener = goalManager.getConversationOpener();
+    opener = goalOpener.opener;
+    console.log(`[room] Using ${goalOpener.type} opener`);
   } else {
+    // Fallback to random starters if goal manager unavailable
     const starters = [
       "What should we focus on today?",
       "I've been thinking about our situation...",
@@ -692,6 +717,14 @@ async function runRoomConversation() {
 
   // Process developer response for actions
   const devResult = await actionExecutor.processAgentResponse(devOpener, 'developer');
+
+  // Extract goals and commitments from developer response
+  if (goalManager) {
+    const extracted = goalManager.processAgentResponse(devResult.cleanText, 'developer');
+    if (extracted.goals.length > 0 || extracted.commitments.length > 0) {
+      console.log(`[room] Extracted ${extracted.goals.length} goals, ${extracted.commitments.length} commitments from developer`);
+    }
+  }
 
   conversation.messages.push({
     agent: 'developer',
@@ -717,6 +750,14 @@ async function runRoomConversation() {
 
     // Process for actions (only developer can execute)
     const result = await actionExecutor.processAgentResponse(response, currentAgent);
+
+    // Extract goals and commitments from response
+    if (goalManager) {
+      const extracted = goalManager.processAgentResponse(result.cleanText, currentAgent);
+      if (extracted.goals.length > 0 || extracted.commitments.length > 0) {
+        console.log(`[room] Extracted ${extracted.goals.length} goals, ${extracted.commitments.length} commitments from ${currentAgent}`);
+      }
+    }
 
     conversation.messages.push({
       agent: currentAgent,

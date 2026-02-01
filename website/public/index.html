@@ -982,10 +982,18 @@
         .then(r => r.json())
         .then(token => {
           if (token.live && token.mint) {
-            tokenStatusEl.textContent = token.mint.substring(0, 8) + '...';
+            // Show truncated contract address (click to copy)
+            const addr = token.mint;
+            tokenStatusEl.textContent = addr.substring(0, 6) + '...' + addr.substring(addr.length - 4);
+            tokenStatusEl.title = 'Click to copy: ' + addr;
             tokenStatusEl.className = 'token-status live';
             tokenStatusEl.style.cursor = 'pointer';
-            tokenStatusEl.onclick = () => window.open(`https://pump.fun/coin/${token.mint}`, '_blank');
+            tokenStatusEl.onclick = () => {
+              navigator.clipboard.writeText(addr);
+              const orig = tokenStatusEl.textContent;
+              tokenStatusEl.textContent = 'Copied!';
+              setTimeout(() => { tokenStatusEl.textContent = orig; }, 1000);
+            };
             // Update dexscreener link with actual contract
             if (dexscreenerLink) {
               dexscreenerLink.href = `https://dexscreener.com/solana/${token.mint}`;
