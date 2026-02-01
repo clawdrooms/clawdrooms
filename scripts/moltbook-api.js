@@ -124,22 +124,32 @@ async function getIdentityToken() {
 
 /**
  * Make authenticated API request to Moltbook
+ * NOTE: Moltbook API integration is currently disabled pending proper API docs.
+ * The current API key doesn't work with the identity-token flow.
  */
 async function moltbookRequest(endpoint, method = 'GET', body = null) {
+  // TEMPORARILY DISABLED - Moltbook API auth not working with current key
+  // Re-enable once proper API documentation is available
+  return {
+    success: false,
+    error: 'Moltbook integration disabled - awaiting API docs',
+    disabled: true
+  };
+
+  /* Original code - uncomment when API is ready:
   if (!MOLTBOOK_API_KEY) {
     return { success: false, error: 'Moltbook API key not configured', needsSetup: true };
   }
 
   if (!process.env.MOLTBOOK_API_URL) {
-    // API URL not configured - silently return to avoid log spam
     return { success: false, error: 'Moltbook API URL not configured', needsSetup: true };
   }
 
-  // Get identity token first
   const token = await getIdentityToken();
   if (!token) {
     return { success: false, error: 'Failed to get identity token' };
   }
+  */
 
   const url = `${MOLTBOOK_BASE_URL}${endpoint}`;
   const options = {
