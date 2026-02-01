@@ -232,11 +232,12 @@ async function fetchDexScreenerData() {
 }
 
 /**
- * Fetch holder data from GMGN
+ * Fetch holder data from GMGN (optional - fails silently)
+ * GMGN API is unreliable/blocked, so we don't depend on it
  */
 async function fetchGMGNData() {
   if (!TOKEN_MINT) {
-    return { error: 'Token mint address not configured' };
+    return null; // Silent fail
   }
 
   try {
@@ -245,7 +246,7 @@ async function fetchGMGNData() {
     const response = await safeFetch(url);
 
     if (!response.data) {
-      return { error: 'Token not found on GMGN' };
+      return null; // Silent fail
     }
 
     const data = response.data;
@@ -273,13 +274,14 @@ async function fetchGMGNData() {
       timestamp: new Date().toISOString()
     };
   } catch (err) {
-    console.error('[onchain-data] GMGN error:', err.message);
-    return { error: err.message };
+    // Silent fail - GMGN is unreliable
+    return null;
   }
 }
 
 /**
- * Fetch top pump.fun launches from GMGN (for market analysis)
+ * Fetch top pump.fun launches from GMGN (optional - fails silently)
+ * GMGN API is unreliable/blocked, so we don't depend on it
  */
 async function fetchTrendingTokens() {
   try {
@@ -287,7 +289,7 @@ async function fetchTrendingTokens() {
     const response = await safeFetch(url);
 
     if (!response.data?.rank) {
-      return { error: 'Failed to fetch trending tokens' };
+      return null; // Silent fail
     }
 
     return {
@@ -304,8 +306,8 @@ async function fetchTrendingTokens() {
       timestamp: new Date().toISOString()
     };
   } catch (err) {
-    console.error('[onchain-data] GMGN trending error:', err.message);
-    return { error: err.message };
+    // Silent fail - GMGN is unreliable
+    return null;
   }
 }
 
