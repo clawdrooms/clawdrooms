@@ -560,6 +560,12 @@
     .activity-type.email { color: #ea4335; }
     .activity-type.launch { color: var(--red); text-shadow: 0 0 5px var(--red-glow); }
     .activity-type.moltbook_post, .activity-type.moltbook_notifications { color: #ff6b35; }
+    .activity-type.dev_wallet_buy { color: #00ff00; text-shadow: 0 0 5px rgba(0,255,0,0.5); }
+    .activity-type.dev_wallet_burn { color: #ff4500; text-shadow: 0 0 5px rgba(255,69,0,0.5); }
+    .activity-type.dev_wallet_lp_add { color: #9945ff; text-shadow: 0 0 5px rgba(153,69,255,0.5); }
+    .activity-type.market_maker_start, .activity-type.market_maker_stop { color: #00bcd4; }
+    .activity-type.market_maker_buy_start { color: #4caf50; }
+    .activity-type.fee_withdrawal { color: #ffc107; }
     
     .activity-status.queued { color: #f0ad4e; }
 
@@ -1035,6 +1041,24 @@
               content = action.content?.substring(0, 40) || 'Moltbook post';
             } else if (action.type === 'MOLTBOOK_NOTIFICATIONS') {
               content = 'Checked notifications';
+            } else if (action.type === 'DEV_WALLET_BUY') {
+              const amt = action.result?.amount || 0;
+              const sig = action.result?.signature?.substring(0, 8) || '';
+              content = `Bought ${amt} SOL` + (sig ? ` [${sig}...]` : '');
+            } else if (action.type === 'DEV_WALLET_BURN') {
+              const amt = action.result?.amount || 0;
+              const sig = action.result?.signature?.substring(0, 8) || '';
+              content = `Burned ${amt.toLocaleString()} tokens` + (sig ? ` [${sig}...]` : '');
+            } else if (action.type === 'DEV_WALLET_LP_ADD') {
+              content = action.content || 'Added liquidity';
+            } else if (action.type === 'MARKET_MAKER_START') {
+              content = 'Market maker started';
+            } else if (action.type === 'MARKET_MAKER_STOP') {
+              content = 'Market maker stopped';
+            } else if (action.type === 'MARKET_MAKER_BUY_START') {
+              content = action.content || 'Support buy initiated';
+            } else if (action.type === 'FEE_WITHDRAWAL') {
+              content = action.content || 'Creator fee withdrawal';
             } else {
               content = action.type || 'Action';
             }

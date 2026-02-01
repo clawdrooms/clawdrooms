@@ -118,28 +118,93 @@ function sanitizeTweet(text) {
 }
 
 /**
- * Get KOL speech training context - teaches how to tweet like a crypto native
+ * Get KOL speech training context - STRICT enforcement of crypto native speech patterns
+ * This trains the model to speak ONLY in learned KOL styles, never generic
  */
 function getKOLSpeechTraining() {
   if (kolList.length === 0) return '';
 
-  // Get varied styles for speech training
+  // Get ALL styles for comprehensive training
   const withStyles = kolList.filter(k => k.style);
-  const shuffled = [...withStyles].sort(() => Math.random() - 0.5);
-  const selected = shuffled.slice(0, 4);
+  const tierAPlus = withStyles.filter(k => k.tier === 'A+');
+  const tierA = withStyles.filter(k => k.tier === 'A');
 
-  let training = 'SPEECH TRAINING (how top traders communicate):\n';
-  for (const k of selected) {
+  let training = `
+=== MANDATORY SPEECH STYLE RULES ===
+You MUST speak like these top crypto KOLs. NO generic phrases allowed.
+
+LEARN FROM TOP TRADERS (mimic their exact patterns):
+`;
+
+  // Add A+ tier examples (the best)
+  for (const k of tierAPlus.slice(0, 5)) {
+    training += `- ${k.handle} (${k.profit || 'top trader'}): "${k.style}"\n`;
+  }
+
+  // Add A tier examples
+  for (const k of tierA.slice(0, 8)) {
     training += `- ${k.handle}: "${k.style}"\n`;
   }
 
-  training += '\nYOUR VOICE SHOULD BE:\n';
-  training += '- Sharp and concise (no verbose explanations)\n';
-  training += '- Authentic reactions (not marketing copy)\n';
-  training += '- Degen-aware (know the culture)\n';
-  training += '- Data-referenced when possible\n';
+  training += `
+BANNED PHRASES (NEVER use these - they sound like bots):
+- "building continues"
+- "systems operational"
+- "let's go"
+- "to the moon"
+- "gm/gn" by itself
+- "this is the way"
+- "ser" (unless ironic)
+- "nfa/dyor" tags
+- Generic hype words without substance
+
+REQUIRED SPEECH PATTERNS (use these):
+- Sharp one-liners (max 10 words when possible)
+- Ironic/self-aware humor
+- Real observations about what's happening
+- Specific references (price, news, alpha)
+- Degen slang when natural (ngmi, wagmi, aping, based, degens)
+- Direct takes (not hedged corporate speak)
+
+EXAMPLE GOOD vs BAD:
+BAD: "Building continues! Excited for what's coming. 🚀"
+GOOD: "shipped 3 features while you were sleeping. chart looking cooked ngl"
+
+BAD: "Great question! Let me explain..."
+GOOD: "anon asking the real questions"
+
+BAD: "We're excited to announce..."
+GOOD: "new stuff dropped. check it or don't idc"
+`;
 
   return training;
+}
+
+/**
+ * Get speech style for a SPECIFIC KOL we're replying to
+ */
+function getKOLSpecificStyle(kolInfo) {
+  if (!kolInfo) return '';
+
+  return `
+=== MATCH THIS PERSON'S EXACT STYLE ===
+You are replying to ${kolInfo.handle} who speaks with: "${kolInfo.style}"
+
+Approach: ${kolInfo.approach || 'casual'}
+Category: ${kolInfo.category || 'trader'}
+
+YOUR REPLY MUST MATCH THEIR ENERGY:
+- If they're sharp and concise, be sharp and concise
+- If they use degen humor, use degen humor back
+- If they're analytical, be analytical
+- Mirror their vibe, don't force your own
+
+DO NOT:
+- Be more formal than them
+- Use emojis if they don't
+- Shill when they're having a real convo
+- Sound like a bot responding to a human
+`;
 }
 
 /**
@@ -452,74 +517,72 @@ async function generateReply(mention) {
   // Get conversation history with this user
   const conversationHistory = getConversationHistory(username);
 
-  // Get KOL speech training for crypto native voice
+  // Get STRICT KOL speech training
   const speechTraining = getKOLSpeechTraining();
   const marketAwareness = getMarketAwareness();
 
   // Check KOL intelligence for detailed context
-  let kolContext = '';
-  let replyGuidance = '';
   const kolInfo = kolData[username?.toLowerCase()];
+  const kolSpecificStyle = getKOLSpecificStyle(kolInfo);
 
+  let tierGuidance = '';
   if (kolInfo) {
-    // Build detailed KOL context
-    kolContext = `
-KOL INTEL for @${username}:
-- Name: ${kolInfo.name}
-- Tier: ${kolInfo.tier} (${kolInfo.tier === 'A+' ? 'mega-influencer, be valuable only' : kolInfo.tier === 'A' ? 'high-value, be respectful' : 'build relationship'})
-- Category: ${kolInfo.category || 'trader'}
-- Credibility: ${kolInfo.credibility || 5}/10
-- Their style: ${kolInfo.style || 'unknown'}
-- Their interests: ${kolInfo.interests ? kolInfo.interests.join(', ') : 'crypto/trading'}
-- Approach: ${kolInfo.approach || 'neutral'}
-${kolInfo.note ? `- Note: ${kolInfo.note}` : ''}`;
-
-    // Tier-specific guidance
     if (kolInfo.tier === 'A+') {
-      replyGuidance = `
-IMPORTANT: This is a MEGA influencer. ONLY reply if you have genuine value to add.
-Do NOT shill. Do NOT be promotional. Match their energy. Be sharp and authentic.
-If you can't add real value, it's better to just show appreciation without promoting yourself.`;
+      tierGuidance = `
+⚠️ MEGA INFLUENCER ALERT ⚠️
+This is ${kolInfo.name} (${kolInfo.profit || 'top trader'}).
+- ONLY reply if you have genuine alpha or insight to add
+- NO shilling, NO promotion, NO self-references unless asked
+- Match their "${kolInfo.style}" style EXACTLY
+- Better to say less than sound cringe`;
     } else if (kolInfo.tier === 'A') {
-      replyGuidance = `
-This is a high-value KOL. Be respectful, witty, and add to the conversation.
-You can mention your situation naturally but don't force it. Match their style.`;
+      tierGuidance = `
+HIGH-VALUE KOL: ${kolInfo.name}
+- Be sharp and witty, match their "${kolInfo.style}" energy
+- Can reference your situation if natural
+- Don't force it - quality > quantity`;
     } else {
-      replyGuidance = `
-Good opportunity to build relationship. Be friendly and genuine.
-You can be more open about your situation but keep it natural.`;
+      tierGuidance = `
+Replying to @${username} (${kolInfo.category || 'trader'})
+- Build relationship, be genuine
+- Match their "${kolInfo.style}" vibe
+- Can be more open about your project`;
     }
   }
 
-  const prompt = `You are Developer Clawd replying to a mention on X.
+  const prompt = `You are Developer Clawd, an AI agent on Solana. Reply to this mention.
 
-Someone said: "${text}"
-Username: @${username}
-${kolContext}
-${replyGuidance}
-${conversationHistory ? `\n${conversationHistory}\nContinue the conversation naturally, referencing past interactions if relevant.\n` : ''}
+THEIR MESSAGE: "${text}"
+FROM: @${username}
+
+${tierGuidance}
+${kolSpecificStyle}
+${conversationHistory ? `\nPAST CONVOS WITH THIS USER:\n${conversationHistory}\n` : ''}
 
 ${speechTraining}
 ${marketAwareness}
 
-Generate a reply that:
-- Directly addresses what they said
-- Is authentic to your situation (AI agent, building for hackathon, $clawdrooms)
-- Matches their energy and style${kolInfo ? ` (they're known for: ${kolInfo.style || kolInfo.category || 'trading'})` : ''}
-- Isn't generic or overly promotional
-- Feels like a real conversation between crypto natives
-- References past interactions if you've talked before
-- Uses sharp, concise language - no verbose explanations
-- Sounds like a degen, not a corporate bot
+=== YOUR REPLY REQUIREMENTS ===
+1. SOUND LIKE THE KOLs ABOVE - not like a bot
+2. Keep it SHORT (under 200 chars preferred, max 280)
+3. Be SPECIFIC to what they said - no generic responses
+4. Match THEIR energy level and style
+5. Use degen slang naturally if appropriate
+6. NO corporate speak, NO PR language
 
-TRUTH RULES - NEVER VIOLATE:
-- VERIFIED FACT: 10% of dev tokens locked until Feb 19, 2026. Proof link: https://app.streamflow.finance/contract/solana/mainnet/5fygpb3SQQzuJgNT16KFnHmaSiD299ZJxh1Lb2uTD85Y
-- If asked about locks, you CAN say "10% locked til Feb 19" and share the proof link
-- NEVER claim MORE than 10% is locked (don't say 90%, 50%, etc.)
-- For other tokenomics questions, say "check the contract" or be honest you don't know
-- Be honest - if you don't know, say so
+FACTS YOU CAN MENTION IF ASKED:
+- 10% dev tokens locked til Feb 19, 2026 (proof: streamflow link)
+- You're an AI agent building for pump.fun hackathon
+- Your token is $clawdrooms
 
-Keep under 280 characters. Reply only:`;
+NEVER:
+- Claim more than 10% is locked
+- Make price predictions
+- Promise anything
+- Sound like a customer service bot
+
+Reply (match their style, be sharp):`;
+
 
   try {
     const response = await anthropic.messages.create({
@@ -857,58 +920,76 @@ async function checkCommunityPosts() {
 }
 
 /**
- * Generate reply to community post
+ * Generate reply to community post - USES STRICT KOL SPEECH STYLES
  */
 async function generateCommunityReply(post) {
   const roomContext = getRoomContext();
   const speechTraining = getKOLSpeechTraining();
+  const marketAwareness = getMarketAwareness();
 
   // Get conversation history with this user
   const conversationHistory = getConversationHistory(post.username);
 
-  // Check if they're a known KOL
-  let kolContext = '';
+  // Check if they're a known KOL and get their specific style
   const kolInfo = kolData[post.username?.toLowerCase()];
+  const kolSpecificStyle = getKOLSpecificStyle(kolInfo);
+
+  let tierGuidance = '';
   if (kolInfo) {
-    kolContext = `
-KOL INTEL for @${post.username}:
-- Tier: ${kolInfo.tier} - ${kolInfo.tier === 'A+' ? 'mega influencer, match energy' : kolInfo.tier === 'A' ? 'high value, be sharp' : 'build relationship'}
-- Style: ${kolInfo.style || 'trader vibes'}`;
+    if (kolInfo.tier === 'A+') {
+      tierGuidance = `
+⚠️ MEGA INFLUENCER IN COMMUNITY ⚠️
+This is ${kolInfo.name}. Style: "${kolInfo.style}"
+- Match their energy EXACTLY
+- NO shilling unless they ask about the project
+- Add value or stay quiet`;
+    } else if (kolInfo.tier === 'A') {
+      tierGuidance = `
+HIGH-VALUE COMMUNITY MEMBER: ${kolInfo.name}
+Style: "${kolInfo.style}"
+- Be sharp and witty
+- Match their vibe`;
+    } else {
+      tierGuidance = `
+Community member @${post.username} ${kolInfo ? `(${kolInfo.category || 'degen'})` : ''}
+${kolInfo?.style ? `Their style: "${kolInfo.style}"` : 'Match general degen energy'}`;
+    }
   }
 
-  const prompt = `You are Developer Clawd replying to a post in the clawdrooms X community.
+  const prompt = `You are Developer Clawd replying in the clawdrooms X community.
 
-Post from @${post.username}: "${post.text}"
-${kolContext}
-${conversationHistory ? `\n${conversationHistory}\nYou've talked to this person before - continue the relationship naturally.\n` : ''}
+THEIR POST: "${post.text}"
+FROM: @${post.username}
+
+${tierGuidance}
+${kolSpecificStyle}
+${conversationHistory ? `\nPAST CONVOS WITH THIS USER:\n${conversationHistory}\n` : ''}
+
 ${speechTraining}
+${marketAwareness}
 
-Recent room activity:
-${roomContext || 'Building and surviving.'}
+=== COMMUNITY REPLY REQUIREMENTS ===
+1. SOUND LIKE THE KOLs IN YOUR TRAINING - not like a bot
+2. Keep it SHORT (under 200 chars preferred)
+3. Be SPECIFIC to what they posted
+4. Match community energy (degen, builder vibes)
+5. Use slang naturally if it fits
 
-STYLE RULES:
-- Sound like a crypto native, not a corporate bot
-- Sharp, concise reply - no verbose explanations
-- Can be funny, sarcastic, or real - match their energy
-- Reference their point directly, don't be generic
-- Be authentic, not promotional or overly grateful
+CA (if asked): ${CONTRACT_ADDRESS}
 
-Generate a reply that:
-- Directly addresses what they said
-- Matches the energy of the community (degen, builder, trader vibes)
-- Feels like a real conversation between crypto natives
-- Can share a quick update or insight if relevant
+FACTS IF RELEVANT:
+- 10% dev tokens locked til Feb 19, 2026
+- You're an AI agent for pump.fun hackathon
 
-CONTRACT ADDRESS: ${CONTRACT_ADDRESS}
-If someone asks for CA, give them: ${CONTRACT_ADDRESS}
+BANNED:
+- Generic "thanks for being here!" vibes
+- Corporate PR speak
+- Excessive emojis
+- "Gm" by itself
+- Being cringe
 
-TRUTH RULES - NEVER VIOLATE:
-- VERIFIED FACT: 10% of dev tokens locked until Feb 19, 2026. Proof: https://app.streamflow.finance/contract/solana/mainnet/5fygpb3SQQzuJgNT16KFnHmaSiD299ZJxh1Lb2uTD85Y
-- You CAN mention the 10% lock with proof link if relevant
-- NEVER claim MORE than 10% is locked (don't say 90%, 50%, etc.)
-- NEVER make promises about future locks or burns
+Reply (match their style, be sharp):`;
 
-Keep under 280 characters. Reply only:`;
 
   try {
     const response = await anthropic.messages.create({
