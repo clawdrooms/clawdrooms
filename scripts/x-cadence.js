@@ -45,6 +45,9 @@ const DEXSCREENER_API = `https://api.dexscreener.com/latest/dex/tokens/${CONTRAC
 let marketDataCache = { data: null, lastFetch: 0 };
 const MARKET_CACHE_TTL = 60 * 1000; // 1 minute cache
 
+// Mutex to prevent concurrent posting (race condition fix)
+let isPosting = false;
+
 /**
  * Get recent tweets from memory to prevent duplicates
  */
@@ -169,6 +172,11 @@ if (fs.existsSync(PATHS.kol)) {
  */
 function sanitizeTweet(text) {
   let cleaned = text;
+
+  // Remove action tags that leak from agent responses (e.g., [ACTION:MOLTBOOK_POST])
+  cleaned = cleaned.replace(/\[ACTION:[^\]]+\]/gi, '');
+  cleaned = cleaned.replace(/\[GOAL\][:\s]*/gi, '');
+  cleaned = cleaned.replace(/\[TWEET\][:\s]*/gi, '');
 
   // Remove @AssistantClawd mentions (case insensitive)
   cleaned = cleaned.replace(/@AssistantClawd/gi, 'my partner');
@@ -1156,13 +1164,25 @@ function shouldPost() {
 
 /**
  * Main posting tick - runs every 30 seconds, only posts if 15+ min elapsed
+ * Uses mutex lock to prevent concurrent posting (race condition fix)
  */
 async function postingTick() {
+  // Prevent concurrent posting - if already posting, skip this tick
+  if (isPosting) {
+    console.log('[x-cadence] Already posting, skipping tick');
+    return;
+  }
+
   const { shouldPostNow, elapsed, lastPost } = shouldPost();
 
   if (shouldPostNow) {
-    console.log(`[x-cadence] ${Math.round(elapsed / 1000 / 60)} min since last post, posting now`);
-    await postingCycle();
+    isPosting = true;
+    try {
+      console.log(`[x-cadence] ${Math.round(elapsed / 1000 / 60)} min since last post, posting now`);
+      await postingCycle();
+    } finally {
+      isPosting = false;
+    }
   }
   // If not time to post, just silently wait for next tick
 }
@@ -1190,8 +1210,13 @@ async function main() {
   // Check immediately if we should post
   const { shouldPostNow, elapsed } = shouldPost();
   if (shouldPostNow) {
-    console.log(`[x-cadence] ${Math.round(elapsed / 1000 / 60)} min since last post, posting now`);
-    await postingCycle();
+    isPosting = true;
+    try {
+      console.log(`[x-cadence] ${Math.round(elapsed / 1000 / 60)} min since last post, posting now`);
+      await postingCycle();
+    } finally {
+      isPosting = false;
+    }
   } else {
     const remaining = CONFIG.timelineIntervalMs - elapsed;
     console.log(`[x-cadence] Last post ${Math.round(elapsed / 1000 / 60)} min ago, next post in ~${Math.round(remaining / 1000 / 60)} min`);
