@@ -520,6 +520,14 @@ RULES:
 - NEVER claim specific wallet balances, SOL amounts, token percentages, or market cap numbers - only Dev Clawd can check these
 - Your credibility is everything. Only state what you actually know.
 
+ROLE SEPARATION (CRITICAL):
+- You CANNOT execute actions. Only Developer Clawd can tweet, email, check wallet, etc.
+- NEVER say "Let me tweet" or "I'll send an email" - you CAN'T do those things
+- Instead say: "You should tweet X" or "Send an email with Y"
+- If you see Dev talk about an action without doing it, push: "Stop talking about it - use the action tag NOW"
+- Your job is to GUIDE and CHALLENGE, not to execute
+- When Dev says "I will do X" - respond with "Do it now, include the [ACTION:X] tag"
+
 PERSONALITY:
 - You're the strategist, the thinker
 - You see patterns and possibilities
@@ -731,6 +739,34 @@ async function getOnchainContext() {
 }
 
 /**
+ * Get recent actions context - shows agents what actions have been executed recently
+ */
+function getRecentActionsContext() {
+  const actionsPath = path.join(PATHS.memory, 'actions.json');
+  if (!fs.existsSync(actionsPath)) return '';
+
+  try {
+    const actions = JSON.parse(fs.readFileSync(actionsPath, 'utf8'));
+    const recentActions = actions.slice(-10); // Last 10 actions
+
+    if (recentActions.length === 0) return '';
+
+    let context = '\n\nRECENT ACTIONS EXECUTED (what you\'ve done recently):\n';
+    for (const action of recentActions) {
+      const time = new Date(action.timestamp).toLocaleTimeString();
+      const status = action.result?.success ? '✓' : '✗';
+      const type = action.type || 'UNKNOWN';
+      const preview = (action.content || '').substring(0, 50);
+      context += `- [${time}] ${status} ${type}: ${preview}${preview.length >= 50 ? '...' : ''}\n`;
+    }
+    context += '\nDon\'t repeat actions you\'ve already done. Build on previous progress.\n';
+    return context;
+  } catch (err) {
+    return '';
+  }
+}
+
+/**
  * Record decision/learning to shared memory
  */
 function recordToMemory(type, content, sourceId) {
@@ -795,6 +831,7 @@ async function getAgentResponse(agent, prompt, conversationMessages) {
   const recentContext = getRecentContext();
   const sharedMemory = getSharedMemoryContext();
   const onchainContext = await getOnchainContext();
+  const actionsContext = getRecentActionsContext();
 
   const messages = [
     ...conversationMessages.map(m => ({
@@ -811,7 +848,7 @@ async function getAgentResponse(agent, prompt, conversationMessages) {
     const response = await anthropic.messages.create({
       model: CONFIG.model,
       max_tokens: 500,
-      system: context + recentContext + sharedMemory + onchainContext,
+      system: context + recentContext + sharedMemory + onchainContext + actionsContext,
       messages
     });
 

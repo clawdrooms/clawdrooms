@@ -508,22 +508,27 @@ function getGoalContext() {
 
 /**
  * Extract goals from agent response text
+ * CONSERVATIVE extraction - only capture explicit goal statements, not every "we should" phrase
  */
 function extractGoalsFromText(text, agentId) {
   const goals = [];
 
-  // Look for explicit goal setting patterns
+  // Only extract EXPLICIT goal statements with clear markers
+  // Patterns like "Our goal is X" or "Goal: X" - not generic "we should" statements
   const goalPatterns = [
-    /(?:goal|objective|target|aim)(?:s)?[:\s]+["']?([^"'\n.]+)["']?/gi,
-    /(?:we need to|we should|must|have to)\s+([^.]+)/gi,
-    /(?:priority|focus)(?:\s+is)?[:\s]+["']?([^"'\n.]+)["']?/gi
+    /(?:our\s+)?(?:new\s+)?goal(?:\s+is)?[:\s]+["']?([^"'\n.]{20,100})["']?/gi,
+    /(?:adding\s+goal|set\s+goal|create\s+goal)[:\s]+["']?([^"'\n.]{20,100})["']?/gi,
+    /\[GOAL\][:\s]*([^[\]]{20,100})/gi
   ];
 
   for (const pattern of goalPatterns) {
     let match;
     while ((match = pattern.exec(text)) !== null) {
       const content = match[1].trim();
-      if (content.length > 10 && content.length < 200) {
+      // More strict validation - must look like a proper goal
+      if (content.length >= 20 && content.length < 100 &&
+          !content.startsWith('is ') && !content.startsWith('to ') &&
+          /^[A-Z]/.test(content)) { // Must start with capital letter
         goals.push({
           title: content,
           createdBy: agentId,

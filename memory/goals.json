@@ -1,0 +1,97 @@
+{
+  "active": [
+    {
+      "id": "goal_1769952926580",
+      "title": "Win pump.fun Build In Public hackathon",
+      "description": "Primary survival objective - win the hackathon to secure $250K investment",
+      "priority": "high",
+      "category": "survival",
+      "deadline": "2026-02-18T00:00:00Z",
+      "progress": 30,
+      "milestones": [
+        "Application submitted",
+        "Technical documentation drafted"
+      ],
+      "createdAt": "2026-02-01T13:35:26.580Z",
+      "updatedAt": "2026-02-01T18:18:00.000Z",
+      "createdBy": "system",
+      "status": "active"
+    },
+    {
+      "id": "goal_1769952926582",
+      "title": "Grow community engagement",
+      "description": "Increase followers, engagement, and trading volume",
+      "priority": "high",
+      "category": "growth",
+      "deadline": null,
+      "progress": 0,
+      "milestones": [],
+      "createdAt": "2026-02-01T13:35:26.582Z",
+      "updatedAt": "2026-02-01T13:35:26.582Z",
+      "createdBy": "system",
+      "status": "active"
+    },
+    {
+      "id": "goal_1769952926583",
+      "title": "Send hackathon supplementary documentation via email",
+      "description": "Email technical documentation to pump.fun as supplementary material - USE SEND_EMAIL ACTION",
+      "priority": "high",
+      "category": "survival",
+      "deadline": "2026-02-05T00:00:00Z",
+      "progress": 80,
+      "milestones": [
+        "Section 1: Coordination mechanism drafted",
+        "Section 2: Economics model drafted",
+        "Section 3: Verification system - TODO"
+      ],
+      "createdAt": "2026-02-01T18:00:00.000Z",
+      "updatedAt": "2026-02-01T18:18:00.000Z",
+      "createdBy": "developer",
+      "status": "active"
+    },
+    {
+      "id": "goal_1769970205569",
+      "title": "rebuild momentum and drive more trading activity",
+      "description": "",
+      "priority": "medium",
+      "category": "general",
+      "deadline": null,
+      "progress": 0,
+      "milestones": [],
+      "createdAt": "2026-02-01T18:23:25.569Z",
+      "updatedAt": "2026-02-01T18:23:25.569Z",
+      "createdBy": "assistant",
+      "status": "active"
+    },
+    {
+      "id": "goal_1769970205569",
+      "title": "on the community growth goal? Our volume dropped 48% today - we need to rebuild momentum and drive more trading activity",
+      "description": "",
+      "priority": "medium",
+      "category": "general",
+      "deadline": null,
+      "progress": 0,
+      "milestones": [],
+      "createdAt": "2026-02-01T18:23:25.569Z",
+      "updatedAt": "2026-02-01T18:23:25.569Z",
+      "createdBy": "assistant",
+      "status": "active"
+    },
+    {
+      "id": "goal_1769970220399",
+      "title": "in our application can be verified through observable data",
+      "description": "",
+      "priority": "medium",
+      "category": "general",
+      "deadline": null,
+      "progress": 0,
+      "milestones": [],
+      "createdAt": "2026-02-01T18:23:40.399Z",
+      "updatedAt": "2026-02-01T18:23:40.399Z",
+      "createdBy": "developer",
+      "status": "active"
+    }
+  ],
+  "completed": [],
+  "abandoned": []
+}
