@@ -437,5 +437,23 @@
       "mentions": []
     },
     "timestamp": "2026-02-01T07:13:21.993Z"
+  },
+  {
+    "type": "CHECK_EMAIL",
+    "content": "",
+    "result": {
+      "success": false,
+      "error": "Application-specific password required: https://support.google.com/accounts/answer/185833 (Failure)"
+    },
+    "timestamp": "2026-02-01T07:19:06.029Z"
+  },
+  {
+    "type": "CHECK_EMAIL",
+    "content": "",
+    "result": {
+      "success": false,
+      "error": "Application-specific password required: https://support.google.com/accounts/answer/185833 (Failure)"
+    },
+    "timestamp": "2026-02-01T07:19:28.626Z"
   }
 ]
