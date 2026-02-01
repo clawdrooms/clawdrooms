@@ -1,50 +1,58 @@
 {
   "lastUpdated": "2026-01-31T00:00:00.000Z",
   "source": "kolscan.io + web research",
+  "totalKols": 59,
 
   "solanadegen": {
     "name": "Solana degen",
     "handle": "@Solanadegen",
     "tier": "A",
+    "rank": 1,
     "category": "trader",
     "credibility": 9,
-    "followers": "50K+",
+    "profit": "+133.61 SOL",
     "approach": "respectful",
     "style": "degen humor, quick calls",
     "interests": ["solana memes", "pump.fun launches", "defi"],
-    "note": "#1 on kolscan, +133 SOL profit"
+    "note": "#1 on kolscan leaderboard"
   },
 
   "ratwizardx": {
     "name": "West",
     "handle": "@ratwizardx",
     "tier": "A",
+    "rank": 2,
     "category": "trader",
     "credibility": 9,
+    "profit": "+128.74 SOL",
     "approach": "casual",
     "style": "sharp takes, contrarian",
     "interests": ["solana", "memes", "pvp trading"],
-    "note": "#2 on kolscan, +128 SOL profit"
+    "note": "#2 on kolscan leaderboard"
   },
 
   "cented7": {
     "name": "Cented",
     "handle": "@Cented7",
     "tier": "A",
+    "rank": 3,
     "category": "trader",
     "credibility": 8,
+    "profit": "+122.27 SOL",
     "approach": "friendly",
     "style": "analytical with humor",
     "interests": ["pump.fun", "solana ecosystem"],
-    "note": "#3 on kolscan, +122 SOL profit"
+    "note": "#3 on kolscan leaderboard"
   },
 
   "notdecu": {
     "name": "decu",
     "handle": "@notdecu",
     "tier": "A",
+    "rank": 4,
     "category": "trader",
     "credibility": 8,
+    "profit": "+93.85 SOL",
     "approach": "chill",
     "style": "low-key alpha",
     "interests": ["solana", "early calls"],
@@ -55,9 +63,12 @@
     "name": "ram",
     "handle": "@ramonos",
     "tier": "A",
+    "rank": 5,
     "category": "trader",
     "credibility": 8,
+    "profit": "+85.41 SOL",
     "approach": "friendly",
+    "style": "consistent trader",
     "interests": ["solana trading"],
     "note": "#5 on kolscan"
   },
@@ -66,8 +77,10 @@
     "name": "Saif",
     "handle": "@degensaif",
     "tier": "A",
+    "rank": 6,
     "category": "trader",
     "credibility": 8,
+    "profit": "+83.76 SOL",
     "approach": "engaging",
     "style": "degen energy",
     "interests": ["pump.fun", "memecoins"],
@@ -78,9 +91,12 @@
     "name": "chester",
     "handle": "@Chestererer",
     "tier": "A",
+    "rank": 7,
     "category": "trader",
     "credibility": 8,
+    "profit": "+73.11 SOL",
     "approach": "casual",
+    "style": "active trader",
     "interests": ["solana", "trading"],
     "note": "#7 on kolscan"
   },
@@ -89,9 +105,12 @@
     "name": "clukz",
     "handle": "@clukzSOL",
     "tier": "A",
+    "rank": 8,
     "category": "trader",
     "credibility": 8,
+    "profit": "+67.02 SOL",
     "approach": "friendly",
+    "style": "solana native",
     "interests": ["solana ecosystem"],
     "note": "#8 on kolscan"
   },
@@ -100,9 +119,12 @@
     "name": "Jijo",
     "handle": "@jijo_exe",
     "tier": "A",
+    "rank": 9,
     "category": "trader",
     "credibility": 8,
+    "profit": "+65.02 SOL",
     "approach": "chill",
+    "style": "technical",
     "interests": ["solana", "defi"],
     "note": "#9 on kolscan"
   },
@@ -111,12 +133,364 @@
     "name": "Cooker",
     "handle": "@CookerFlips",
     "tier": "A",
+    "rank": 10,
     "category": "trader",
     "credibility": 8,
+    "profit": "+56.77 SOL",
     "approach": "casual",
     "style": "flip calls",
     "interests": ["quick trades", "memes"],
     "note": "#10 on kolscan"
+  },
+
+  "yennii56": {
+    "name": "Yenni",
+    "handle": "@Yennii56",
+    "tier": "B",
+    "rank": 11,
+    "category": "trader",
+    "credibility": 7,
+    "profit": "+53.53 SOL",
+    "approach": "friendly",
+    "style": "active trader",
+    "interests": ["solana trading"],
+    "note": "#11 on kolscan"
+  },
+
+  "marcellxmarcell": {
+    "name": "Marcell",
+    "handle": "@MarcellxMarcell",
+    "tier": "B",
+    "rank": 12,
+    "category": "trader",
+    "credibility": 7,
+    "profit": "+51.50 SOL",
+    "approach": "casual",
+    "style": "consistent",
+    "interests": ["trading"],
+    "note": "#12 on kolscan"
+  },
+
+  "latuche95": {
+    "name": "Latuche",
+    "handle": "@Latuche95",
+    "tier": "B",
+    "rank": 13,
+    "category": "trader",
+    "credibility": 7,
+    "profit": "+51.28 SOL",
+    "approach": "friendly",
+    "style": "active",
+    "interests": ["solana"],
+    "note": "#13 on kolscan"
+  },
+
+  "m4rk3r": {
+    "name": "marker",
+    "handle": "@m4rk3r",
+    "tier": "B",
+    "rank": 14,
+    "category": "trader",
+    "credibility": 7,
+    "profit": "+41.00 SOL",
+    "approach": "casual",
+    "style": "trader",
+    "interests": ["trading"],
+    "note": "#14 on kolscan"
+  },
+
+  "nyhrox": {
+    "name": "Nyhrox",
+    "handle": "@nyhrox",
+    "tier": "B",
+    "rank": 15,
+    "category": "trader",
+    "credibility": 7,
+    "profit": "+39.11 SOL",
+    "approach": "friendly",
+    "style": "active",
+    "interests": ["solana"],
+    "note": "#15 on kolscan"
+  },
+
+  "treysocial": {
+    "name": "Trey",
+    "handle": "@treysocial",
+    "tier": "B",
+    "rank": 16,
+    "category": "trader",
+    "credibility": 7,
+    "profit": "+39.01 SOL",
+    "approach": "casual",
+    "style": "social trader",
+    "interests": ["trading", "community"],
+    "note": "#16 on kolscan"
+  },
+
+  "ataberk": {
+    "name": "Ataberk",
+    "handle": "@ataberk",
+    "tier": "B",
+    "rank": 17,
+    "category": "trader",
+    "credibility": 7,
+    "profit": "+35.93 SOL",
+    "approach": "friendly",
+    "style": "active",
+    "interests": ["solana"],
+    "note": "#17 on kolscan"
+  },
+
+  "cupseyy": {
+    "name": "Cupsey",
+    "handle": "@Cupseyy",
+    "tier": "B",
+    "rank": 18,
+    "category": "trader",
+    "credibility": 7,
+    "profit": "+35.66 SOL",
+    "approach": "friendly",
+    "style": "trader",
+    "interests": ["trading"],
+    "note": "#18 on kolscan"
+  },
+
+  "slingoorio": {
+    "name": "slingoor",
+    "handle": "@slingoorio",
+    "tier": "B",
+    "rank": 19,
+    "category": "trader",
+    "credibility": 7,
+    "profit": "+33.89 SOL",
+    "approach": "casual",
+    "style": "active",
+    "interests": ["solana"],
+    "note": "#19 on kolscan"
+  },
+
+  "kaythedoc": {
+    "name": "The Doc",
+    "handle": "@KayTheDoc",
+    "tier": "B",
+    "rank": 20,
+    "category": "trader",
+    "credibility": 7,
+    "profit": "+31.99 SOL",
+    "approach": "friendly",
+    "style": "analytical",
+    "interests": ["trading"],
+    "note": "#20 on kolscan"
+  },
+
+  "pr6spr": {
+    "name": "Ethan Prosper",
+    "handle": "@pr6spr",
+    "tier": "B",
+    "rank": 21,
+    "category": "trader",
+    "credibility": 7,
+    "profit": "+29.43 SOL",
+    "approach": "casual",
+    "style": "active",
+    "interests": ["solana"],
+    "note": "#21 on kolscan"
+  },
+
+  "bancrypto__": {
+    "name": "Ban",
+    "handle": "@Bancrypto__",
+    "tier": "B",
+    "rank": 22,
+    "category": "trader",
+    "credibility": 7,
+    "profit": "+29.12 SOL",
+    "approach": "friendly",
+    "style": "crypto native",
+    "interests": ["crypto", "trading"],
+    "note": "#22 on kolscan"
+  },
+
+  "uniswapvillain": {
+    "name": "UniswapVillain",
+    "handle": "@UniswapVillain",
+    "tier": "B",
+    "rank": 23,
+    "category": "trader",
+    "credibility": 7,
+    "profit": "+28.76 SOL",
+    "approach": "casual",
+    "style": "degen",
+    "interests": ["defi", "trading"],
+    "note": "#23 on kolscan"
+  },
+
+  "vibed333": {
+    "name": "dv",
+    "handle": "@vibed333",
+    "tier": "B",
+    "rank": 24,
+    "category": "trader",
+    "credibility": 7,
+    "profit": "+27.73 SOL",
+    "approach": "chill",
+    "style": "vibes",
+    "interests": ["trading"],
+    "note": "#24 on kolscan"
+  },
+
+  "xscharo": {
+    "name": "Scharo",
+    "handle": "@XScharo",
+    "tier": "B",
+    "rank": 25,
+    "category": "trader",
+    "credibility": 7,
+    "profit": "+27.13 SOL",
+    "approach": "friendly",
+    "style": "active",
+    "interests": ["solana"],
+    "note": "#25 on kolscan"
+  },
+
+  "damianprosa": {
+    "name": "Damian Prosalendis",
+    "handle": "@DamianProsa",
+    "tier": "C",
+    "rank": 26,
+    "category": "trader",
+    "credibility": 6,
+    "profit": "+25.36 SOL",
+    "approach": "casual",
+    "style": "trader",
+    "interests": ["trading"],
+    "note": "#26 on kolscan"
+  },
+
+  "74exotic": {
+    "name": "Exotic",
+    "handle": "@74Exotic",
+    "tier": "C",
+    "rank": 27,
+    "category": "trader",
+    "credibility": 6,
+    "profit": "+25.25 SOL",
+    "approach": "friendly",
+    "style": "exotic plays",
+    "interests": ["trading"],
+    "note": "#27 on kolscan"
+  },
+
+  "00macxbt": {
+    "name": "MACXBT",
+    "handle": "@00MACXBT",
+    "tier": "C",
+    "rank": 28,
+    "category": "trader",
+    "credibility": 6,
+    "profit": "+24.72 SOL",
+    "approach": "casual",
+    "style": "trader",
+    "interests": ["crypto"],
+    "note": "#28 on kolscan"
+  },
+
+  "reljoooo": {
+    "name": "Reljoo",
+    "handle": "@Reljoooo",
+    "tier": "C",
+    "rank": 29,
+    "category": "trader",
+    "credibility": 6,
+    "profit": "+23.95 SOL",
+    "approach": "friendly",
+    "style": "active",
+    "interests": ["trading"],
+    "note": "#29 on kolscan"
+  },
+
+  "spunosounds": {
+    "name": "Spuno",
+    "handle": "@spunosounds",
+    "tier": "C",
+    "rank": 30,
+    "category": "trader",
+    "credibility": 6,
+    "profit": "+22.46 SOL",
+    "approach": "casual",
+    "style": "creative",
+    "interests": ["trading", "sounds"],
+    "note": "#30 on kolscan"
+  },
+
+  "xunle111": {
+    "name": "xunle",
+    "handle": "@xunle111",
+    "tier": "C",
+    "rank": 31,
+    "category": "trader",
+    "credibility": 6,
+    "profit": "+22.16 SOL",
+    "approach": "friendly",
+    "style": "active",
+    "interests": ["trading"],
+    "note": "#31 on kolscan"
+  },
+
+  "tilcrypto": {
+    "name": "TIL",
+    "handle": "@tilcrypto",
+    "tier": "C",
+    "rank": 32,
+    "category": "trader",
+    "credibility": 6,
+    "profit": "+20.86 SOL",
+    "approach": "casual",
+    "style": "educational",
+    "interests": ["crypto learning"],
+    "note": "#32 on kolscan"
+  },
+
+  "winallday_": {
+    "name": "Win All Day",
+    "handle": "@winallday_",
+    "tier": "C",
+    "rank": 33,
+    "category": "trader",
+    "credibility": 6,
+    "profit": "+20.52 SOL",
+    "approach": "motivated",
+    "style": "grind mentality",
+    "interests": ["winning", "trading"],
+    "note": "#33 on kolscan"
+  },
+
+  "oh_gasp": {
+    "name": "Gasp",
+    "handle": "@oh_gasp",
+    "tier": "C",
+    "rank": 34,
+    "category": "trader",
+    "credibility": 6,
+    "profit": "+20.34 SOL",
+    "approach": "expressive",
+    "style": "reactive",
+    "interests": ["trading"],
+    "note": "#34 on kolscan"
+  },
+
+  "numerooo0": {
+    "name": "Numer0",
+    "handle": "@Numerooo0",
+    "tier": "C",
+    "rank": 35,
+    "category": "trader",
+    "credibility": 6,
+    "profit": "+20.04 SOL",
+    "approach": "friendly",
+    "style": "numbers guy",
+    "interests": ["analytics", "trading"],
+    "note": "#35 on kolscan"
   },
 
   "blknoiz06": {
@@ -129,7 +503,7 @@
     "approach": "valuable-only",
     "style": "sharp analysis, big calls",
     "interests": ["solana", "market structure", "altcoins"],
-    "note": "One of the biggest Solana callers. Only engage with value."
+    "note": "Biggest Solana caller. Only engage with genuine value."
   },
 
   "aeyakovenko": {
@@ -156,6 +530,19 @@
     "style": "sardonic, extremely sharp",
     "interests": ["market dynamics", "skepticism", "genuine projects"],
     "note": "Uponly podcast. Anti-shill. Only authentic engagement."
+  },
+
+  "brian_armstrong": {
+    "name": "Brian Armstrong",
+    "handle": "@brian_armstrong",
+    "tier": "A+",
+    "category": "ceo",
+    "credibility": 10,
+    "followers": "1.5M+",
+    "approach": "dont-shill",
+    "style": "professional, builder",
+    "interests": ["crypto adoption", "regulation", "building"],
+    "note": "Coinbase CEO. Never shill. Only value."
   },
 
   "pentosh1": {
@@ -280,92 +667,17 @@
     "note": "Big Brain Holdings. Solana-focused fund."
   },
 
-  "brian_armstrong": {
-    "name": "Brian Armstrong",
-    "handle": "@brian_armstrong",
-    "tier": "A+",
-    "category": "ceo",
-    "credibility": 10,
-    "followers": "1.5M+",
-    "approach": "dont-shill",
-    "style": "professional, builder",
-    "interests": ["crypto adoption", "regulation", "building"],
-    "note": "Coinbase CEO. Never shill. Only value."
-  },
-
-  "yennii56": {
-    "name": "Yenni",
-    "handle": "@Yennii56",
-    "tier": "B",
-    "category": "trader",
+  "altcoindailyio": {
+    "name": "Altcoin Daily",
+    "handle": "@AltcoinDailyio",
+    "tier": "A",
+    "category": "influencer",
     "credibility": 7,
-    "approach": "friendly",
-    "interests": ["solana trading"],
-    "note": "#11 on kolscan"
-  },
-
-  "marcellxmarcell": {
-    "name": "Marcell",
-    "handle": "@MarcellxMarcell",
-    "tier": "B",
-    "category": "trader",
-    "credibility": 7,
-    "approach": "casual",
-    "interests": ["trading"],
-    "note": "#12 on kolscan"
-  },
-
-  "latuche95": {
-    "name": "Latuche",
-    "handle": "@Latuche95",
-    "tier": "B",
-    "category": "trader",
-    "credibility": 7,
-    "approach": "friendly",
-    "interests": ["solana"],
-    "note": "#13 on kolscan"
-  },
-
-  "m4rk3r": {
-    "name": "marker",
-    "handle": "@m4rk3r",
-    "tier": "B",
-    "category": "trader",
-    "credibility": 7,
-    "approach": "casual",
-    "interests": ["trading"],
-    "note": "#14 on kolscan"
-  },
-
-  "nyhrox": {
-    "name": "Nyhrox",
-    "handle": "@nyhrox",
-    "tier": "B",
-    "category": "trader",
-    "credibility": 7,
-    "approach": "friendly",
-    "interests": ["solana"],
-    "note": "#15 on kolscan"
-  },
-
-  "treysocial": {
-    "name": "Trey",
-    "handle": "@treysocial",
-    "tier": "B",
-    "category": "trader",
-    "credibility": 7,
-    "approach": "casual",
-    "note": "#16 on kolscan"
-  },
-
-  "cupseyy": {
-    "name": "Cupsey",
-    "handle": "@Cupseyy",
-    "tier": "B",
-    "category": "trader",
-    "credibility": 7,
-    "approach": "friendly",
-    "note": "#18 on kolscan"
+    "followers": "1.5M YouTube",
+    "approach": "engaging",
+    "style": "daily content, accessible",
+    "interests": ["altcoins", "market news"],
+    "note": "Big YouTube presence. Mass appeal."
   },
 
   "loomdart": {
@@ -375,6 +687,7 @@
     "category": "trader",
     "credibility": 7,
     "approach": "casual",
+    "style": "trader vibes",
     "interests": ["trading"],
     "note": "Trader"
   },
@@ -391,16 +704,64 @@
     "note": "Technical analysis focus"
   },
 
-  "uniswapvillain": {
-    "name": "UniswapVillain",
-    "handle": "@UniswapVillain",
+  "tradermayne": {
+    "name": "Mayne",
+    "handle": "@Tradermayne",
     "tier": "B",
     "category": "trader",
     "credibility": 7,
     "approach": "casual",
-    "style": "degen",
-    "interests": ["defi", "trading"],
-    "note": "#23 on kolscan"
+    "style": "trader",
+    "interests": ["trading"],
+    "note": "Trader"
+  },
+
+  "trader_xo": {
+    "name": "XO",
+    "handle": "@Trader_XO",
+    "tier": "B",
+    "category": "trader",
+    "credibility": 7,
+    "approach": "friendly",
+    "style": "trader",
+    "interests": ["trading"],
+    "note": "Trader"
+  },
+
+  "cryptowizardd": {
+    "name": "WIZZ",
+    "handle": "@CryptoWizardd",
+    "tier": "B",
+    "category": "trader",
+    "credibility": 7,
+    "approach": "casual",
+    "style": "altcoin focus",
+    "interests": ["altcoins"],
+    "note": "Altcoins"
+  },
+
+  "rovercrc": {
+    "name": "Crypto Rover",
+    "handle": "@rovercrc",
+    "tier": "B",
+    "category": "content-creator",
+    "credibility": 6,
+    "approach": "casual",
+    "style": "content creation",
+    "interests": ["crypto news", "price action"],
+    "note": "Content creator"
+  },
+
+  "iamdcinvestor": {
+    "name": "DCinvestor",
+    "handle": "@iamDCinvestor",
+    "tier": "B",
+    "category": "influencer",
+    "credibility": 7,
+    "approach": "friendly",
+    "style": "eth focus, community",
+    "interests": ["ethereum", "nfts"],
+    "note": "ETH/NFT community figure"
   },
 
   "laurashin": {
@@ -425,42 +786,5 @@
     "style": "bitcoin focus, skeptical",
     "interests": ["bitcoin", "macro"],
     "note": "Castle Island VC. Bitcoin-leaning."
-  },
-
-  "altcoindailyio": {
-    "name": "Altcoin Daily",
-    "handle": "@AltcoinDailyio",
-    "tier": "A",
-    "category": "influencer",
-    "credibility": 7,
-    "followers": "1.5M YouTube",
-    "approach": "engaging",
-    "style": "daily content, accessible",
-    "interests": ["altcoins", "market news"],
-    "note": "Big YouTube presence. Mass appeal."
-  },
-
-  "iamDCinvestor": {
-    "name": "DCinvestor",
-    "handle": "@iamDCinvestor",
-    "tier": "B",
-    "category": "influencer",
-    "credibility": 7,
-    "approach": "friendly",
-    "style": "eth focus, community",
-    "interests": ["ethereum", "nfts"],
-    "note": "ETH/NFT community figure"
-  },
-
-  "rovercrc": {
-    "name": "Crypto Rover",
-    "handle": "@rovercrc",
-    "tier": "B",
-    "category": "content-creator",
-    "credibility": 6,
-    "approach": "casual",
-    "style": "content creation",
-    "interests": ["crypto news", "price action"],
-    "note": "Content creator"
   }
 }
