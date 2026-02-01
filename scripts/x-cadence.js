@@ -564,7 +564,8 @@ function logToActivityLog(type, content, timestamp) {
   // Map type to activity log format
   const actionType = type === 'timeline' ? 'TWEET' : 
                      type === 'community' ? 'COMMUNITY_POST' : 
-                     type === 'reply' ? 'REPLY' : 'TWEET';
+                     type === 'reply' ? 'REPLY' : 
+                     type === 'community_reply' ? 'COMMUNITY_REPLY' : 'TWEET';
 
   actions.push({
     type: actionType,
@@ -597,6 +598,117 @@ async function postingCycle() {
     await postCommunity();
   } else {
     await postTimeline();
+  }
+}
+
+/**
+ * Check and reply to community posts
+ */
+async function checkCommunityPosts() {
+  const communityId = process.env.X_COMMUNITY_ID;
+  if (!communityId || communityId === '1234567890123456789') {
+    // Skip if no real community ID set
+    return;
+  }
+
+  const state = loadState();
+  if (!state.repliedCommunityPosts) {
+    state.repliedCommunityPosts = [];
+  }
+
+  console.log('[x-cadence] Checking community posts...');
+
+  try {
+    const posts = await xBrowser.getCommunityPosts(communityId);
+
+    for (const post of posts) {
+      // Skip our own posts
+      if (post.username?.toLowerCase() === 'clawdrooms') continue;
+      
+      // Skip if already replied
+      if (!post.url || state.repliedCommunityPosts.includes(post.url)) continue;
+
+      // Skip very short posts
+      if (post.text.length < 10) continue;
+
+      // Skip posts older than 2 hours (check time if available)
+      if (post.time) {
+        const postAge = Date.now() - new Date(post.time).getTime();
+        if (postAge > 2 * 60 * 60 * 1000) continue;
+      }
+
+      console.log(`[x-cadence] New community post from @${post.username}: ${post.text.substring(0, 50)}...`);
+
+      const reply = await generateCommunityReply(post);
+      if (!reply) continue;
+
+      const result = await xBrowser.replyToTweet(post.url, reply);
+
+      if (result.success) {
+        state.repliedCommunityPosts.push(post.url);
+        // Keep only last 50 replied community posts
+        if (state.repliedCommunityPosts.length > 50) {
+          state.repliedCommunityPosts = state.repliedCommunityPosts.slice(-50);
+        }
+        saveState(state);
+        console.log(`[x-cadence] Replied to community post by @${post.username}`);
+
+        recordTweet('community_reply', reply, post);
+      }
+
+      // Don't spam replies
+      await new Promise(r => setTimeout(r, 5000));
+    }
+  } catch (err) {
+    console.error('[x-cadence] Community post check error:', err.message);
+  }
+}
+
+/**
+ * Generate reply to community post
+ */
+async function generateCommunityReply(post) {
+  const roomContext = getRoomContext();
+
+  const prompt = `You are Developer Clawd replying to a post in the clawdrooms X community.
+
+Post from @${post.username}: "${post.text}"
+
+Your context:
+- You and Assistant Clawd are AI agents in a survival hackathon
+- You're building clawdrooms.fun together
+- ~17 days left until deadline
+- You genuinely appreciate community engagement
+
+Recent room activity:
+${roomContext || 'Building and surviving.'}
+
+Generate a friendly, engaging reply that:
+- Directly addresses what they said
+- Is warm and appreciative (they're in YOUR community)
+- Can share relevant updates if appropriate
+- Invites further conversation
+
+Keep under 280 characters. Reply only:`;
+
+  try {
+    const response = await anthropic.messages.create({
+      model: CONFIG.model,
+      max_tokens: 150,
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    let reply = response.content[0].text.trim();
+    reply = reply.replace(/^["']|["']$/g, '');
+
+    if (reply.length > 280) {
+      reply = reply.substring(0, 277) + '...';
+    }
+
+    return reply;
+  } catch (err) {
+    console.error('[x-cadence] Generate community reply error:', err.message);
+    return null;
   }
 }
 
@@ -657,6 +769,13 @@ async function main() {
   // Check mentions every minute
   setInterval(checkMentions, CONFIG.mentionCheckMs);
 
+  // Check community posts every minute (offset by 30s from mentions)
+  setTimeout(() => {
+    checkCommunityPosts();
+    setInterval(checkCommunityPosts, CONFIG.mentionCheckMs);
+  }, 30 * 1000);
+
+  console.log('[x-cadence] Community monitoring: checking every 1 minute');
   console.log('[x-cadence] Cadence running');
 }
 

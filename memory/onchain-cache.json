@@ -5,13 +5,13 @@
         "address": "2EU98xTjnjrQgf33eG63p7uSbMFgkHLT35bKCrKzFqQ4",
         "balanceLamports": 5871503180,
         "balanceSOL": 5.87150318,
-        "timestamp": "2026-02-01T07:11:45.108Z"
+        "timestamp": "2026-02-01T07:18:35.305Z"
       },
       "holdings": {
         "nativeBalance": 5.87150318,
         "tokenCount": 0,
         "ourToken": null,
-        "timestamp": "2026-02-01T07:11:45.363Z"
+        "timestamp": "2026-02-01T07:18:35.472Z"
       },
       "dexscreener": {
         "error": "Token mint address not configured"
@@ -22,8 +22,8 @@
       "trending": {
         "error": "HTTP 403"
       },
-      "fetchedAt": "2026-02-01T07:11:45.363Z"
+      "fetchedAt": "2026-02-01T07:18:35.472Z"
     },
-    "timestamp": 1769929905363
+    "timestamp": 1769930315472
   }
 }
