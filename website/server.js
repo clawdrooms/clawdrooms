@@ -94,20 +94,47 @@ function getRoomState() {
 }
 
 /**
- * Get recent conversations
+ * Get recent conversations (includes live conversation for real-time updates)
  */
 function getRecentConversations(limit = 10) {
-  if (!fs.existsSync(PATHS.conversations)) return [];
+  const conversations = [];
 
-  const files = fs.readdirSync(PATHS.conversations)
-    .filter(f => f.endsWith('.json'))
-    .sort()
-    .slice(-limit);
+  // First, include the latest live conversation if it exists
+  if (fs.existsSync(PATHS.latestConvo)) {
+    try {
+      const latest = JSON.parse(fs.readFileSync(PATHS.latestConvo, 'utf8'));
+      if (latest && latest.messages && latest.messages.length > 0) {
+        conversations.push(latest);
+      }
+    } catch (e) {
+      console.error('[api] Failed to read latest conversation:', e.message);
+    }
+  }
 
-  return files.map(f => {
-    const content = JSON.parse(fs.readFileSync(path.join(PATHS.conversations, f), 'utf8'));
-    return content;
-  });
+  // Then add from the conversations folder
+  if (fs.existsSync(PATHS.conversations)) {
+    const files = fs.readdirSync(PATHS.conversations)
+      .filter(f => f.endsWith('.json'))
+      .sort()
+      .slice(-(limit - 1));
+
+    for (const f of files) {
+      try {
+        const content = JSON.parse(fs.readFileSync(path.join(PATHS.conversations, f), 'utf8'));
+        // Avoid duplicating the live conversation
+        if (conversations.length === 0 || content.id !== conversations[0].id) {
+          conversations.push(content);
+        }
+      } catch (e) {
+        console.error('[api] Failed to read conversation file:', f, e.message);
+      }
+    }
+  }
+
+  // Sort by most recent first and limit
+  return conversations
+    .sort((a, b) => new Date(b.started || 0) - new Date(a.started || 0))
+    .slice(0, limit);
 }
 
 /**
@@ -134,23 +161,29 @@ function getAgentStatus() {
   let devStatus = 'Thinking...';
   let assistantStatus = 'Observing...';
 
-  if (fs.existsSync(PATHS.tweets)) {
-    const tweets = JSON.parse(fs.readFileSync(PATHS.tweets, 'utf8'));
-    const lastTweet = tweets[tweets.length - 1];
-    if (lastTweet) {
-      const ago = Math.round((Date.now() - new Date(lastTweet.timestamp).getTime()) / 60000);
-      devStatus = `Posted ${lastTweet.type} ${ago}m ago`;
-    }
-  }
-
+  // Check latest conversation first - this takes priority
   if (fs.existsSync(PATHS.latestConvo)) {
     const convo = JSON.parse(fs.readFileSync(PATHS.latestConvo, 'utf8'));
     if (convo.messages?.length > 0) {
       const last = convo.messages[convo.messages.length - 1];
       if (last.agent === 'assistant') {
         assistantStatus = 'Just spoke in the room';
+      } else if (last.agent === 'developer') {
+        devStatus = 'Just spoke in the room';
       }
     }
+  }
+
+  // If dev didn't just speak in room, check tweets
+  if (devStatus === 'Thinking...' && fs.existsSync(PATHS.tweets)) {
+    try {
+      const tweets = JSON.parse(fs.readFileSync(PATHS.tweets, 'utf8'));
+      const lastTweet = tweets[tweets.length - 1];
+      if (lastTweet) {
+        const ago = Math.round((Date.now() - new Date(lastTweet.timestamp).getTime()) / 60000);
+        devStatus = `Posted ${lastTweet.type} ${ago}m ago`;
+      }
+    } catch (err) {}
   }
 
   return {
