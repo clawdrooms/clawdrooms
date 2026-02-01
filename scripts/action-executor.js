@@ -10,6 +10,7 @@
  * [ACTION:COMMUNITY_POST]content[/ACTION]
  * [ACTION:CHECK_EMAIL][/ACTION]
  * [ACTION:SEND_EMAIL]{"to":"...","subject":"...","body":"..."}[/ACTION]
+ * [ACTION:SUBMIT_GOOGLE_FORM]{"formUrl":"...","fields":{"Field Name":"value"}}[/ACTION]
  * [ACTION:LAUNCH_TOKEN][/ACTION] - Launch token on pump.fun
  * [ACTION:BUY_TOKEN]{"amount": 0.1}[/ACTION] - Buy tokens with SOL
  * [ACTION:SELL_TOKEN] - DISABLED (dev wallet never sells)
@@ -22,12 +23,14 @@ const fs = require('fs');
 const path = require('path');
 const xBrowser = require('./x-browser-poster');
 
-// Gmail imports (optional)
-let nodemailer, Imap;
+// Email imports (optional)
+let Resend, Imap;
 try {
-  nodemailer = require('nodemailer');
+  const resendModule = require('resend');
+  Resend = resendModule.Resend;
+  console.log('[action-executor] Resend loaded for email sending');
 } catch (err) {
-  console.log('[action-executor] nodemailer not installed, email sending disabled');
+  console.log('[action-executor] resend not installed, email sending disabled (npm install resend)');
 }
 try {
   Imap = require('imap');
@@ -473,18 +476,18 @@ async function checkEmail() {
 }
 
 /**
- * Send an email via Gmail
+ * Send an email via Resend API (HTTPS, bypasses SMTP port blocking)
  */
 async function sendEmail(content) {
-  if (!nodemailer) {
-    return { success: false, error: 'nodemailer not installed (npm install nodemailer)' };
+  if (!Resend) {
+    return { success: false, error: 'resend not installed (npm install resend)' };
   }
 
-  const email = process.env.GMAIL_ADDRESS;
-  const password = process.env.GMAIL_APP_PASSWORD;
+  const apiKey = process.env.RESEND_API_KEY;
+  const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
 
-  if (!email || !password) {
-    return { success: false, error: 'Gmail credentials not configured' };
+  if (!apiKey) {
+    return { success: false, error: 'RESEND_API_KEY not configured in .env' };
   }
 
   try {
@@ -493,24 +496,46 @@ async function sendEmail(content) {
       return { success: false, error: 'Missing to, subject, or body' };
     }
 
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: { user: email, pass: password }
-    });
+    const resend = new Resend(apiKey);
 
-    const info = await transporter.sendMail({
-      from: email,
+    const result = await resend.emails.send({
+      from: fromEmail,
       to: data.to,
       subject: data.subject,
       text: data.body
     });
 
+    if (result.error) {
+      return { success: false, error: result.error.message };
+    }
+
     return {
       success: true,
-      messageId: info.messageId,
+      messageId: result.data?.id || 'sent',
       to: data.to,
       subject: data.subject
     };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Submit a Google Form using browser automation
+ */
+async function submitGoogleForm(content) {
+  try {
+    const googleForm = require('./google-form-submitter');
+    const data = JSON.parse(content);
+
+    if (!data.formUrl || !data.fields) {
+      return { success: false, error: 'Missing formUrl or fields' };
+    }
+
+    const result = await googleForm.submitForm(data.formUrl, data.fields);
+    await googleForm.closeBrowser();
+
+    return result;
   } catch (err) {
     return { success: false, error: err.message };
   }
@@ -757,6 +782,11 @@ async function executeAction(action) {
 
     case 'SEND_EMAIL':
       result = await sendEmail(action.content);
+      break;
+
+    case 'SUBMIT_GOOGLE_FORM':
+    case 'SUBMIT_FORM':
+      result = await submitGoogleForm(action.content);
       break;
 
     case 'LAUNCH_TOKEN':

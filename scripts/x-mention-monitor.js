@@ -46,6 +46,23 @@ const DATA_DIR = path.join(__dirname, '..', 'data');
 const MEMORY_DIR = path.join(__dirname, '..', 'memory');
 const REPLY_HISTORY_PATH = path.join(DATA_DIR, 'x-reply-history.json');
 const CONVERSATION_CACHE_PATH = path.join(DATA_DIR, 'x-conversation-cache.json');
+const KOL_INTELLIGENCE_PATH = path.join(DATA_DIR, 'kol-intelligence.json');
+
+// Load KOL intelligence for speech training
+let kolData = {};
+let kolList = [];
+try {
+  if (fs.existsSync(KOL_INTELLIGENCE_PATH)) {
+    kolData = JSON.parse(fs.readFileSync(KOL_INTELLIGENCE_PATH, 'utf8'));
+    // Build list of KOLs for random selection (exclude metadata fields)
+    kolList = Object.entries(kolData)
+      .filter(([key, val]) => typeof val === 'object' && val.handle)
+      .map(([key, val]) => ({ username: key, ...val }));
+    console.log(`[x-mentions] Loaded ${kolList.length} KOLs for speech training`);
+  }
+} catch (err) {
+  console.error('[x-mentions] Failed to load KOL intelligence:', err.message);
+}
 
 // Ensure directories exist
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -89,6 +106,104 @@ BANNED PHRASES:
 - Any announcement of being AI-powered
 
 Be conversational, not robotic. Engage with what they actually said.`;
+
+// ============================================
+// KOL SPEECH TRAINING
+// ============================================
+
+/**
+ * Get KOL speech training context - STRICT enforcement of crypto native speech patterns
+ * This trains the model to speak ONLY in learned KOL styles, never generic
+ */
+function getKOLSpeechTraining() {
+  if (kolList.length === 0) return '';
+
+  // Get ALL styles for comprehensive training
+  const withStyles = kolList.filter(k => k.style);
+  const tierAPlus = withStyles.filter(k => k.tier === 'A+');
+  const tierA = withStyles.filter(k => k.tier === 'A');
+
+  let training = `
+=== MANDATORY SPEECH STYLE RULES ===
+You MUST speak like these top crypto KOLs. NO generic phrases allowed.
+
+LEARN FROM TOP TRADERS (mimic their exact patterns):
+`;
+
+  // Add A+ tier examples (the best)
+  for (const k of tierAPlus.slice(0, 5)) {
+    training += `- ${k.handle} (${k.profit || 'top trader'}): "${k.style}"\n`;
+  }
+
+  // Add A tier examples
+  for (const k of tierA.slice(0, 8)) {
+    training += `- ${k.handle}: "${k.style}"\n`;
+  }
+
+  training += `
+BANNED PHRASES (NEVER use these - they sound like bots):
+- "building continues"
+- "systems operational"
+- "let's go"
+- "to the moon"
+- "gm/gn" by itself
+- "this is the way"
+- "ser" (unless ironic)
+- "nfa/dyor" tags
+- Generic hype words without substance
+- "appreciate you" or "thanks for being here"
+
+REQUIRED SPEECH PATTERNS (use these):
+- Sharp one-liners (max 10 words when possible)
+- Ironic/self-aware humor
+- Real observations about what's happening
+- Specific references (price, news, alpha)
+- Degen slang when natural (ngmi, wagmi, aping, based, degens)
+- Direct takes (not hedged corporate speak)
+
+EXAMPLE GOOD vs BAD:
+BAD: "Building continues! Excited for what's coming. 🚀"
+GOOD: "shipped 3 features while you were sleeping. chart looking cooked ngl"
+
+BAD: "Great question! Let me explain..."
+GOOD: "anon asking the real questions"
+
+BAD: "We're excited to announce..."
+GOOD: "new stuff dropped. check it or don't idc"
+
+BAD: "Thanks for your support!"
+GOOD: "you're early. that's it. that's the tweet"
+`;
+
+  return training;
+}
+
+/**
+ * Get speech style for a SPECIFIC KOL we're replying to
+ */
+function getKOLSpecificStyle(kolInfo) {
+  if (!kolInfo) return '';
+
+  return `
+=== MATCH THIS PERSON'S EXACT STYLE ===
+You are replying to ${kolInfo.handle} who speaks with: "${kolInfo.style}"
+
+Approach: ${kolInfo.approach || 'casual'}
+Category: ${kolInfo.category || 'trader'}
+
+YOUR REPLY MUST MATCH THEIR ENERGY:
+- If they're sharp and concise, be sharp and concise
+- If they use degen humor, use degen humor back
+- If they're analytical, be analytical
+- Mirror their vibe, don't force your own
+
+DO NOT:
+- Be more formal than them
+- Use emojis if they don't
+- Shill when they're having a real convo
+- Sound like a bot responding to a human
+`;
+}
 
 // ============================================
 // MEMORY AND CONTEXT LOADING
@@ -167,6 +282,39 @@ async function generateIntelligentReply(mention, analysis) {
     const memoryContext = getSharedMemoryContext();
     const sentimentContext = getSentimentContext();
 
+    // Get KOL speech training
+    const speechTraining = getKOLSpeechTraining();
+
+    // Check if they're a known KOL and get their specific style
+    const kolInfo = kolData[mention.author?.toLowerCase()];
+    const kolSpecificStyle = getKOLSpecificStyle(kolInfo);
+
+    // Build tier guidance for known KOLs
+    let tierGuidance = '';
+    if (kolInfo) {
+      if (kolInfo.tier === 'A+') {
+        tierGuidance = `
+⚠️ MEGA INFLUENCER ALERT ⚠️
+This is ${kolInfo.name} (${kolInfo.profit || 'top trader'}).
+- ONLY reply if you have genuine alpha or insight to add
+- NO shilling, NO promotion, NO self-references unless asked
+- Match their "${kolInfo.style}" style EXACTLY
+- Better to say less than sound cringe`;
+      } else if (kolInfo.tier === 'A') {
+        tierGuidance = `
+HIGH-VALUE KOL: ${kolInfo.name}
+- Be sharp and witty, match their "${kolInfo.style}" energy
+- Can reference your situation if natural
+- Don't force it - quality > quantity`;
+      } else {
+        tierGuidance = `
+Replying to @${mention.author} (${kolInfo.category || 'trader'})
+- Build relationship, be genuine
+- Match their "${kolInfo.style}" vibe
+- Can be more open about your project`;
+      }
+    }
+
     // Calculate days left
     const deadline = new Date('2026-02-18');
     const now = new Date();
@@ -198,6 +346,9 @@ They replied to your tweet. Continue the conversation:
     }
 
     const prompt = `${conversationContext ? `CONVERSATION HISTORY WITH @${mention.author}:\n${conversationContext}\n\n` : ''}
+${tierGuidance}
+${kolSpecificStyle}
+
 SHARED MEMORY (what clawdrooms knows):${memoryContext || ' No specific memories'}${sentimentContext}
 
 CURRENT STATE:
@@ -208,11 +359,13 @@ THEIR MESSAGE FROM @${mention.author}:
 
 ${specificGuidance}
 
-Reply as Developer Clawd. Be authentic, not robotic. Under 200 characters. No hashtags.
+${speechTraining}
+
+Reply as Developer Clawd. Sound like the KOLs above - sharp, concise, crypto native. Under 200 characters. No hashtags.
 ${conversationContext ? 'IMPORTANT: Reference previous conversation context if relevant.' : ''}`;
 
     const response = await claudeClient.messages.create({
-      model: 'claude-3-haiku-20240307',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 150,
       system: DEVELOPER_CLAWD_VOICE,
       messages: [{ role: 'user', content: prompt }]
