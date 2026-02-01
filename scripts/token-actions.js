@@ -260,67 +260,72 @@ async function buyTokens(amountSOL) {
   } catch (err) {
     console.error('[buy] Jupiter swap failed:', err.message);
 
-    // Try pumpportal.fun with 'raydium' pool for graduated tokens
-    console.log('[buy] Trying pumpportal.fun with raydium pool...');
+    // Try pumpportal.fun with different pools for graduated tokens
+    // Valid pools: 'pump', 'raydium', 'pump-amm', 'launchlab', 'raydium-cpmm', 'bonk', 'auto'
+    const poolsToTry = ['pump-amm', 'auto', 'raydium'];
 
-    try {
-      const response = await fetch('https://pumpportal.fun/api/trade-local', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          publicKey: keypair.publicKey.toString(),
-          action: 'buy',
-          mint: CONTRACT_ADDRESS,
-          denominatedInSol: 'true',
-          amount: amountSOL,
-          slippage: 20,
-          priorityFee: 0.001,
-          pool: 'raydium', // Use raydium pool for graduated tokens
-        }),
-      });
+    for (const pool of poolsToTry) {
+      console.log(`[buy] Trying pumpportal.fun with ${pool} pool...`);
 
-      if (response.status === 200) {
-        const data = await response.arrayBuffer();
-        const tx = VersionedTransaction.deserialize(new Uint8Array(data));
-        tx.sign([keypair]);
-
-        console.log('[buy] Transaction signed, sending via pumpportal raydium...');
-
-        const signature = await connection.sendTransaction(tx, {
-          skipPreflight: false,
-          maxRetries: 3,
+      try {
+        const response = await fetch('https://pumpportal.fun/api/trade-local', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            publicKey: keypair.publicKey.toString(),
+            action: 'buy',
+            mint: CONTRACT_ADDRESS,
+            denominatedInSol: 'true',
+            amount: amountSOL,
+            slippage: 20,
+            priorityFee: 0.001,
+            pool: pool,
+          }),
         });
 
-        console.log(`[buy] Transaction sent: ${signature}`);
+        if (response.status === 200) {
+          const data = await response.arrayBuffer();
+          const tx = VersionedTransaction.deserialize(new Uint8Array(data));
+          tx.sign([keypair]);
 
-        const confirmation = await connection.confirmTransaction(signature, 'confirmed');
+          console.log(`[buy] Transaction signed, sending via pumpportal ${pool}...`);
 
-        if (!confirmation.value.err) {
-          console.log('[buy] Transaction confirmed via pumpportal raydium!');
-          console.log(`[buy] Solscan: https://solscan.io/tx/${signature}`);
-
-          const proofFile = saveProof('buy', {
-            amountSOL,
-            signature,
-            mint: CONTRACT_ADDRESS,
-            wallet: keypair.publicKey.toString(),
-            solscan: `https://solscan.io/tx/${signature}`,
-            method: 'pumpportal_raydium'
+          const signature = await connection.sendTransaction(tx, {
+            skipPreflight: false,
+            maxRetries: 3,
           });
 
-          return { success: true, signature, proofFile };
+          console.log(`[buy] Transaction sent: ${signature}`);
+
+          const confirmation = await connection.confirmTransaction(signature, 'confirmed');
+
+          if (!confirmation.value.err) {
+            console.log(`[buy] Transaction confirmed via pumpportal ${pool}!`);
+            console.log(`[buy] Solscan: https://solscan.io/tx/${signature}`);
+
+            const proofFile = saveProof('buy', {
+              amountSOL,
+              signature,
+              mint: CONTRACT_ADDRESS,
+              wallet: keypair.publicKey.toString(),
+              solscan: `https://solscan.io/tx/${signature}`,
+              method: `pumpportal_${pool}`
+            });
+
+            return { success: true, signature, proofFile };
+          } else {
+            console.log(`[buy] Pumpportal ${pool} transaction failed:`, confirmation.value.err);
+          }
         } else {
-          console.log('[buy] Pumpportal raydium transaction failed:', confirmation.value.err);
+          const errorText = await response.text();
+          console.log(`[buy] Pumpportal ${pool} API error:`, response.status, errorText.substring(0, 200));
         }
-      } else {
-        const errorText = await response.text();
-        console.log('[buy] Pumpportal raydium API error:', response.status, errorText);
+      } catch (pumpErr) {
+        console.log(`[buy] Pumpportal ${pool} fallback failed:`, pumpErr.message);
       }
-    } catch (pumpErr) {
-      console.log('[buy] Pumpportal raydium fallback failed:', pumpErr.message);
     }
 
-    console.error('[buy] Error:', err.message);
+    console.error('[buy] All methods failed. Error:', err.message);
     return { success: false, error: err.message };
   }
 }
