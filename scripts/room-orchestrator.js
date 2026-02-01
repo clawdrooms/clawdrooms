@@ -843,14 +843,18 @@ async function getAgentResponse(agent, prompt, conversationMessages) {
   const actionsContext = getRecentActionsContext();
 
   const messages = [
-    ...conversationMessages.map(m => ({
-      role: m.agent === agent ? 'assistant' : 'user',
-      content: m.content
-    }))
+    ...conversationMessages
+      .filter(m => m.content && m.content.trim()) // Filter out empty messages
+      .map(m => ({
+        role: m.agent === agent ? 'assistant' : 'user',
+        content: m.content
+      }))
   ];
 
+  // Add user prompt if needed (only if prompt is not empty)
   if (messages.length === 0 || messages[messages.length - 1].role === 'assistant') {
-    messages.push({ role: 'user', content: prompt });
+    const userContent = prompt && prompt.trim() ? prompt : 'Continue the conversation.';
+    messages.push({ role: 'user', content: userContent });
   }
 
   try {
