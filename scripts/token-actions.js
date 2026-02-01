@@ -152,29 +152,42 @@ async function buyTokens(amountSOL) {
     // Try Jupiter first (works for Raydium/PumpSwap graduated tokens)
     console.log('[buy] Using Jupiter API for swap...');
 
-    // Get quote from Jupiter - try without exclusions first to see available routes
-    const quoteUrl = `https://quote-api.jup.ag/v6/quote?inputMint=${SOL_MINT}&outputMint=${CONTRACT_ADDRESS}&amount=${amountLamports}&slippageBps=2000`;
+    // Get quote from Jupiter
+    const quoteUrl = `https://quote-api.jup.ag/v6/quote?inputMint=${SOL_MINT}&outputMint=${CONTRACT_ADDRESS}&amount=${amountLamports}&slippageBps=2000&swapMode=ExactIn`;
     console.log('[buy] Getting quote from Jupiter...');
+    console.log('[buy] Quote URL:', quoteUrl);
 
-    const quoteResponse = await fetch(quoteUrl);
+    const quoteResponse = await fetch(quoteUrl, {
+      headers: {
+        'Accept': 'application/json',
+      }
+    });
     const quoteText = await quoteResponse.text();
 
+    console.log('[buy] Jupiter response status:', quoteResponse.status);
+
     if (!quoteResponse.ok) {
-      console.log('[buy] Jupiter quote response:', quoteText);
-      throw new Error(`Jupiter quote error: ${quoteText}`);
+      console.log('[buy] Jupiter quote error response:', quoteText);
+      throw new Error(`Jupiter quote error (${quoteResponse.status}): ${quoteText}`);
     }
 
     let quoteData;
     try {
       quoteData = JSON.parse(quoteText);
     } catch (e) {
-      console.log('[buy] Failed to parse Jupiter response:', quoteText);
+      console.log('[buy] Failed to parse Jupiter response:', quoteText.substring(0, 500));
       throw new Error('Invalid Jupiter response');
     }
 
     if (!quoteData || quoteData.error) {
       console.log('[buy] Jupiter quote data:', JSON.stringify(quoteData, null, 2));
       throw new Error(`Jupiter quote failed: ${quoteData?.error || 'No route found'}`);
+    }
+
+    // Check if no routes found
+    if (!quoteData.outAmount || quoteData.outAmount === '0') {
+      console.log('[buy] Jupiter returned zero output - no liquidity or route');
+      throw new Error('No liquidity found on Jupiter');
     }
 
     // Log the route info
@@ -245,57 +258,66 @@ async function buyTokens(amountSOL) {
 
     return { success: true, signature, proofFile };
   } catch (err) {
-    // If Jupiter fails, try pump.fun as fallback (for tokens still on bonding curve)
-    if (!err.message.includes('bonding curve')) {
-      console.log('[buy] Jupiter failed, trying pump.fun fallback...');
+    console.error('[buy] Jupiter swap failed:', err.message);
 
-      try {
-        const response = await fetch('https://pumpportal.fun/api/trade-local', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            publicKey: keypair.publicKey.toString(),
-            action: 'buy',
-            mint: CONTRACT_ADDRESS,
-            denominatedInSol: 'true',
-            amount: amountSOL,
-            slippage: 15,
-            priorityFee: 0.0005,
-            pool: 'pump',
-          }),
+    // Try pumpportal.fun with 'raydium' pool for graduated tokens
+    console.log('[buy] Trying pumpportal.fun with raydium pool...');
+
+    try {
+      const response = await fetch('https://pumpportal.fun/api/trade-local', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          publicKey: keypair.publicKey.toString(),
+          action: 'buy',
+          mint: CONTRACT_ADDRESS,
+          denominatedInSol: 'true',
+          amount: amountSOL,
+          slippage: 20,
+          priorityFee: 0.001,
+          pool: 'raydium', // Use raydium pool for graduated tokens
+        }),
+      });
+
+      if (response.status === 200) {
+        const data = await response.arrayBuffer();
+        const tx = VersionedTransaction.deserialize(new Uint8Array(data));
+        tx.sign([keypair]);
+
+        console.log('[buy] Transaction signed, sending via pumpportal raydium...');
+
+        const signature = await connection.sendTransaction(tx, {
+          skipPreflight: false,
+          maxRetries: 3,
         });
 
-        if (response.status === 200) {
-          const data = await response.arrayBuffer();
-          const tx = VersionedTransaction.deserialize(new Uint8Array(data));
-          tx.sign([keypair]);
+        console.log(`[buy] Transaction sent: ${signature}`);
 
-          const signature = await connection.sendTransaction(tx, {
-            skipPreflight: false,
-            maxRetries: 3,
+        const confirmation = await connection.confirmTransaction(signature, 'confirmed');
+
+        if (!confirmation.value.err) {
+          console.log('[buy] Transaction confirmed via pumpportal raydium!');
+          console.log(`[buy] Solscan: https://solscan.io/tx/${signature}`);
+
+          const proofFile = saveProof('buy', {
+            amountSOL,
+            signature,
+            mint: CONTRACT_ADDRESS,
+            wallet: keypair.publicKey.toString(),
+            solscan: `https://solscan.io/tx/${signature}`,
+            method: 'pumpportal_raydium'
           });
 
-          const confirmation = await connection.confirmTransaction(signature, 'confirmed');
-
-          if (!confirmation.value.err) {
-            console.log('[buy] Transaction confirmed via pump.fun!');
-            console.log(`[buy] Solscan: https://solscan.io/tx/${signature}`);
-
-            const proofFile = saveProof('buy', {
-              amountSOL,
-              signature,
-              mint: CONTRACT_ADDRESS,
-              wallet: keypair.publicKey.toString(),
-              solscan: `https://solscan.io/tx/${signature}`,
-              method: 'pumpfun'
-            });
-
-            return { success: true, signature, proofFile };
-          }
+          return { success: true, signature, proofFile };
+        } else {
+          console.log('[buy] Pumpportal raydium transaction failed:', confirmation.value.err);
         }
-      } catch (pumpErr) {
-        console.log('[buy] Pump.fun fallback also failed:', pumpErr.message);
+      } else {
+        const errorText = await response.text();
+        console.log('[buy] Pumpportal raydium API error:', response.status, errorText);
       }
+    } catch (pumpErr) {
+      console.log('[buy] Pumpportal raydium fallback failed:', pumpErr.message);
     }
 
     console.error('[buy] Error:', err.message);
