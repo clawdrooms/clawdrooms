@@ -210,6 +210,13 @@ STYLE RULES:
 CRITICAL: Do NOT use @ mentions in your tweet. Don't tag @AssistantClawd or anyone else.
 Do NOT post threads (no 1/ 2/ 3/ numbering). Just one standalone tweet.
 
+TRUTH RULES - NEVER VIOLATE:
+- NEVER claim you locked tokens, burned supply, or took financial actions unless you have proof
+- NEVER state specific percentages or numbers about tokenomics you cannot verify
+- NEVER make promises about future token actions (locks, burns, vesting)
+- If asked about tokenomics, say "check the contract" or be vague
+- Stick to opinions, vibes, building updates - NOT financial claims
+
 Tweet only, nothing else:`;
 
   try {
@@ -267,6 +274,12 @@ Keep it under 280 characters. Be real. Sharp takes only.
 
 CRITICAL: Do NOT use @ mentions. Don't tag @AssistantClawd or anyone else.
 Do NOT post threads (no 1/ 2/ 3/ numbering). Just one standalone post.
+
+TRUTH RULES - NEVER VIOLATE:
+- NEVER claim you locked tokens, burned supply, or took financial actions unless you have proof
+- NEVER state specific percentages or numbers about tokenomics you cannot verify
+- NEVER make promises about future token actions (locks, burns, vesting)
+- Stick to building updates, vibes, community engagement - NOT financial claims
 
 Post only, nothing else:`;
 
@@ -346,6 +359,12 @@ Generate a reply that:
 - Matches their energy and style${kolInfo ? ` (they're known for: ${kolInfo.style || kolInfo.category || 'trading'})` : ''}
 - Isn't generic or overly promotional
 - Feels like a real conversation
+
+TRUTH RULES - NEVER VIOLATE:
+- NEVER claim you locked tokens, burned supply, or took financial actions unless you have proof
+- NEVER state specific percentages or numbers about tokenomics you cannot verify
+- If asked about locks/burns/tokenomics, say "check the contract" or "still figuring that out"
+- Be honest - if you don't know, say so
 
 Keep under 280 characters. Reply only:`;
 
