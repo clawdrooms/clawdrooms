@@ -195,8 +195,10 @@ async function executeTweet(content) {
 
   return {
     success: true,
+    queued: true,
     text: tweet,
-    note: 'Tweet idea saved. Actual posting handled by x-cadence scheduler.'
+    status: 'QUEUED (not posted yet)',
+    note: 'Saved to tweet-ideas.json. Actual posting handled by x-cadence scheduler.'
   };
 }
 

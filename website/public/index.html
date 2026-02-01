@@ -559,6 +559,9 @@
     .activity-type.reply { color: var(--assistant-color); }
     .activity-type.email { color: #ea4335; }
     .activity-type.launch { color: var(--red); text-shadow: 0 0 5px var(--red-glow); }
+    .activity-type.moltbook_post, .activity-type.moltbook_notifications { color: #ff6b35; }
+    
+    .activity-status.queued { color: #f0ad4e; }
 
     .activity-time {
       color: var(--dim);
@@ -1001,12 +1004,14 @@
           activityLogEl.innerHTML = actions.map(action => {
             const time = action.timestamp ? new Date(action.timestamp).toLocaleTimeString() : '';
             const typeClass = action.type?.toLowerCase() || '';
-            const status = action.result?.success ? 'success' : 'failed';
-            const statusText = action.result?.success ? 'OK' : (action.result?.error || 'Failed');
+            // Use custom status if available, otherwise derive from success
+            const isQueued = action.result?.queued;
+            const status = isQueued ? 'queued' : (action.result?.success ? 'success' : 'failed');
+            const statusText = action.result?.status || (action.result?.success ? 'OK' : (action.result?.error || 'Failed'));
 
             let content = '';
             if (action.type === 'TWEET') {
-              content = action.content?.substring(0, 50) || 'Posted tweet';
+              content = (isQueued ? '[QUEUED] ' : '') + (action.content?.substring(0, 40) || 'Tweet');
             } else if (action.type === 'CHECK_WALLET' || action.type === 'WALLET') {
               content = action.result?.balance ? `${action.result.balance.toFixed(4)} SOL` : 'Checked wallet';
             } else if (action.type === 'CHECK_MENTIONS' || action.type === 'MENTIONS') {
@@ -1015,6 +1020,10 @@
               content = 'Replied to mention';
             } else if (action.type === 'LAUNCH_TOKEN' || action.type === 'LAUNCH') {
               content = action.result?.contractAddress ? `Launched: ${action.result.contractAddress.substring(0, 8)}...` : 'Token launch';
+            } else if (action.type === 'MOLTBOOK_POST') {
+              content = action.content?.substring(0, 40) || 'Moltbook post';
+            } else if (action.type === 'MOLTBOOK_NOTIFICATIONS') {
+              content = 'Checked notifications';
             } else {
               content = action.type || 'Action';
             }

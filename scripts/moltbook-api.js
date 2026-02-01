@@ -122,17 +122,31 @@ async function moltbookRequest(endpoint, method = 'GET', body = null) {
 
 /**
  * Post content to Moltbook
+ * @param {string} content - Post body content
+ * @param {string} title - Post title (optional - will auto-generate from content if not provided)
+ * @param {string} submolt - Submolt to post to (default: "general")
  */
-async function createPost(content) {
+async function createPost(content, title = null, submolt = 'general') {
   if (isRateLimited('posts', 20)) {
     return { success: false, error: 'Rate limited: too many posts this hour' };
   }
 
-  const result = await moltbookRequest('/posts', 'POST', { content });
+  // Auto-generate title from content if not provided
+  if (!title) {
+    // Take first line or first 50 chars, whichever is shorter
+    const firstLine = content.split('\n')[0];
+    title = firstLine.length > 60 ? firstLine.substring(0, 57) + '...' : firstLine;
+  }
+
+  const result = await moltbookRequest('/posts', 'POST', { 
+    submolt,
+    title, 
+    content 
+  });
 
   if (result.success) {
     incrementRateLimit('posts');
-    console.log(`[moltbook] Posted: ${content.substring(0, 50)}...`);
+    console.log(`[moltbook] Posted: ${title.substring(0, 50)}...`);
   }
 
   return result;
