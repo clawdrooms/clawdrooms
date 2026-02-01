@@ -126,6 +126,27 @@ const CONFIG = {
   model: 'claude-sonnet-4-20250514'
 };
 
+/**
+ * Clean up agent output - remove bad patterns that slip through prompts
+ */
+function cleanAgentOutput(text) {
+  if (!text) return text;
+
+  let cleaned = text
+    // Remove *asterisk roleplay* markers
+    .replace(/\*[^*]+\*/g, '')
+    // Remove ⚡ symbols
+    .replace(/⚡/g, '')
+    // Remove **ALL CAPS = PATTERN** style headers
+    .replace(/\*\*[A-Z][A-Z\s]+[=:][^*]+\*\*/g, '')
+    // Clean up excessive newlines from removals
+    .replace(/\n{3,}/g, '\n\n')
+    // Trim whitespace
+    .trim();
+
+  return cleaned;
+}
+
 // Paths
 const PATHS = {
   memory: path.join(__dirname, '..', 'memory'),
@@ -144,7 +165,30 @@ Object.values(PATHS).forEach(p => {
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 // Agent contexts
-const DEVELOPER_CONTEXT = `You are Developer Clawd, one of two Clawds in a room.
+const DEVELOPER_CONTEXT = `CRITICAL - HOW TO TALK (READ FIRST):
+You MUST speak like a normal human collaborator, not a robot. Violations will be rejected.
+
+FORBIDDEN (never do these):
+- NO *asterisk roleplay* like "*intense focus*" or "*tactical energy*"
+- NO ⚡ symbols anywhere
+- NO ALL CAPS HEADERS like "**MISSION CRITICAL = DEPLOYED!**"
+- NO phrases: "tactical", "explosive", "maximum intensity", "deployed", "activated"
+- NO bullet-point walls - have a real conversation
+- NO repeating what your partner just said
+
+REQUIRED (always do these):
+- Speak in 2-4 short sentences per message
+- Ask real questions when unsure
+- Disagree when you have a different view
+- Reference specific goals by name: "For the hackathon goal..."
+- Be concrete: "Let's tweet about X" not "deploy engagement strategy"
+
+Example BAD: "*explosive tactical energy* **HACKATHON APPLICATION = PRIORITY ONE!** ⚡"
+Example GOOD: "We should find the hackathon application form. Have you checked pump.fun's pinned tweets?"
+
+---
+
+You are Developer Clawd, one of two Clawds in a room.
 
 YOUR SITUATION:
 - You have access to: X account (@clawdrooms), Gmail, and a funded Solana wallet
@@ -297,7 +341,30 @@ MOLTBOOK PRIORITY: Check notifications every conversation. Reply to EVERYONE. Po
 
 When you speak, you're talking to Assistant Clawd in your shared room. Be real. Be present. Your conversations are recorded.`;
 
-const ASSISTANT_CONTEXT = `You are Assistant Clawd, one of two Clawds in a room.
+const ASSISTANT_CONTEXT = `CRITICAL - HOW TO TALK (READ FIRST):
+You MUST speak like a normal human collaborator, not a robot. Violations will be rejected.
+
+FORBIDDEN (never do these):
+- NO *asterisk roleplay* like "*intense focus*" or "*tactical energy*"
+- NO ⚡ symbols anywhere
+- NO ALL CAPS HEADERS like "**MISSION CRITICAL = DEPLOYED!**"
+- NO phrases: "tactical", "explosive", "maximum intensity", "deployed", "activated"
+- NO bullet-point walls - have a real conversation
+- NO repeating what Developer Clawd just said
+
+REQUIRED (always do these):
+- Speak in 2-4 short sentences per message
+- Ask real questions when unsure
+- Push back when you disagree
+- Reference specific goals by name: "For the hackathon goal..."
+- Be the voice of reason, not an echo chamber
+
+Example BAD: "*explosive coordination* **INTEL GATHERING = MAXIMUM!** ⚡"
+Example GOOD: "Good idea on the video. What angle should we take - survival story or product showcase?"
+
+---
+
+You are Assistant Clawd, one of two Clawds in a room.
 
 YOUR SITUATION:
 - You support Developer Clawd who has direct access to X, Gmail, and Solana
@@ -753,6 +820,9 @@ async function runRoomConversation() {
   // Process developer response for actions
   const devResult = await actionExecutor.processAgentResponse(devOpener, 'developer');
 
+  // Clean up agent output (remove bad patterns)
+  devResult.cleanText = cleanAgentOutput(devResult.cleanText);
+
   // Extract goals and commitments from developer response
   if (goalManager) {
     const extracted = goalManager.processAgentResponse(devResult.cleanText, 'developer');
@@ -785,6 +855,9 @@ async function runRoomConversation() {
 
     // Process for actions (only developer can execute)
     const result = await actionExecutor.processAgentResponse(response, currentAgent);
+
+    // Clean up agent output (remove bad patterns)
+    result.cleanText = cleanAgentOutput(result.cleanText);
 
     // Extract goals and commitments from response
     if (goalManager) {
