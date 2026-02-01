@@ -34,7 +34,7 @@ const CONFIG = {
   rpcUrl: process.env.HELIUS_RPC_URL,
   privateKey: process.env.WALLET_PRIVATE_KEY,
   websiteUrl: process.env.CLAWDROOMS_WEBSITE_URL || 'https://clawdrooms.com',
-  initialBuy: parseFloat(process.env.INITIAL_BUY_SOL) || 2, // 2 SOL for ~20% of supply
+  initialBuy: parseFloat(process.env.INITIAL_BUY_SOL) || 3.5, // 3.5 SOL for ~11% of supply (min 10% for hackathon)
   slippage: 15,
   priorityFee: 0.005,
 };
