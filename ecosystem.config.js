@@ -52,6 +52,20 @@ module.exports = {
       env: {
         NODE_ENV: 'production'
       }
+    },
+    {
+      name: 'sustainability',
+      script: 'scripts/sustainability-daemon.js',
+      args: 'run',
+      cwd: '/root/clawdrooms',
+      instances: 1,
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '200M',
+      env: {
+        NODE_ENV: 'production',
+        SUSTAINABILITY_ENABLED: 'true'
+      }
     }
   ]
 };
