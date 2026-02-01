@@ -133,6 +133,9 @@ function sanitizeTweet(text) {
 
 /**
  * Execute a tweet action
+ * NOTE: Direct tweeting from room conversations is DISABLED to prevent duplicates.
+ * All tweets should go through x-cadence which has proper scheduling and dedup.
+ * This function logs the intent but does not actually post.
  */
 async function executeTweet(content) {
   if (!content || content.length === 0) {
@@ -147,14 +150,37 @@ async function executeTweet(content) {
     tweet = tweet.substring(0, 277) + '...';
   }
 
-  console.log(`[action-executor] Posting tweet: ${tweet}`);
+  // Log the intent but DO NOT actually post
+  // x-cadence is the only system that should post tweets
+  console.log(`[action-executor] Tweet intent logged (NOT posted - use x-cadence): ${tweet}`);
 
+  // Save to tweet ideas file for x-cadence to potentially use
+  const ideasPath = path.join(__dirname, '..', 'memory', 'tweet-ideas.json');
+  let ideas = [];
   try {
-    const result = await xBrowser.postTweet(tweet);
-    return result;
-  } catch (err) {
-    return { success: false, error: err.message };
+    if (fs.existsSync(ideasPath)) {
+      ideas = JSON.parse(fs.readFileSync(ideasPath, 'utf8'));
+    }
+  } catch (err) {}
+
+  ideas.push({
+    content: tweet,
+    timestamp: new Date().toISOString(),
+    source: 'room-conversation'
+  });
+
+  // Keep last 20 ideas
+  if (ideas.length > 20) {
+    ideas = ideas.slice(-20);
   }
+
+  fs.writeFileSync(ideasPath, JSON.stringify(ideas, null, 2));
+
+  return {
+    success: true,
+    text: tweet,
+    note: 'Tweet idea saved. Actual posting handled by x-cadence scheduler.'
+  };
 }
 
 /**

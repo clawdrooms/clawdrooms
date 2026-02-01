@@ -193,7 +193,7 @@ Tweet only, nothing else:`;
   try {
     const response = await anthropic.messages.create({
       model: CONFIG.model,
-      max_tokens: 100,
+      max_tokens: 150,
       messages: [{ role: 'user', content: prompt }]
     });
 
@@ -248,7 +248,7 @@ Post only, nothing else:`;
   try {
     const response = await anthropic.messages.create({
       model: CONFIG.model,
-      max_tokens: 100,
+      max_tokens: 150,
       messages: [{ role: 'user', content: prompt }]
     });
 
@@ -327,7 +327,7 @@ Keep under 280 characters. Reply only:`;
   try {
     const response = await anthropic.messages.create({
       model: CONFIG.model,
-      max_tokens: 100,
+      max_tokens: 150,
       messages: [{ role: 'user', content: prompt }]
     });
 
