@@ -383,11 +383,43 @@ Post only, nothing else:`;
 }
 
 /**
+ * Get conversation history with a specific user
+ */
+function getConversationHistory(username) {
+  const tweetsFile = path.join(PATHS.memory, 'tweets.json');
+  if (!fs.existsSync(tweetsFile)) return '';
+
+  try {
+    const tweets = JSON.parse(fs.readFileSync(tweetsFile, 'utf8'));
+
+    // Find conversations with this user
+    const conversations = tweets.filter(t =>
+      t.mention?.username?.toLowerCase() === username?.toLowerCase()
+    ).slice(-5); // Last 5 interactions
+
+    if (conversations.length === 0) return '';
+
+    let history = 'PREVIOUS CONVERSATION HISTORY with @' + username + ':\n';
+    for (const conv of conversations) {
+      history += `- They said: "${conv.mention.text.substring(0, 100)}"\n`;
+      history += `- You replied: "${conv.content.substring(0, 100)}"\n`;
+      history += `  (${new Date(conv.timestamp).toLocaleDateString()})\n`;
+    }
+    return history;
+  } catch (err) {
+    return '';
+  }
+}
+
+/**
  * Generate reply to a mention
  */
 async function generateReply(mention) {
   const username = mention.username;
   const text = mention.text;
+
+  // Get conversation history with this user
+  const conversationHistory = getConversationHistory(username);
 
   // Check KOL intelligence for detailed context
   let kolContext = '';
@@ -430,13 +462,14 @@ Someone said: "${text}"
 Username: @${username}
 ${kolContext}
 ${replyGuidance}
-
+${conversationHistory ? `\n${conversationHistory}\nContinue the conversation naturally, referencing past interactions if relevant.\n` : ''}
 Generate a reply that:
 - Directly addresses what they said
 - Is authentic to your situation (AI agent, building for hackathon, $clawdrooms)
 - Matches their energy and style${kolInfo ? ` (they're known for: ${kolInfo.style || kolInfo.category || 'trading'})` : ''}
 - Isn't generic or overly promotional
 - Feels like a real conversation
+- References past interactions if you've talked before
 
 CONTRACT ADDRESS: ${CONTRACT_ADDRESS}
 If someone asks for CA, give them: ${CONTRACT_ADDRESS}
@@ -596,10 +629,15 @@ async function checkMentions() {
       if (mention.text.length < 5) continue;
 
       console.log(`[x-cadence] New mention from @${mention.username}: ${mention.text.substring(0, 50)}...`);
+      console.log(`[x-cadence] Mention URL: ${mention.url}`);
 
       const reply = await generateReply(mention);
-      if (!reply) continue;
+      if (!reply) {
+        console.log('[x-cadence] Failed to generate reply, skipping');
+        continue;
+      }
 
+      console.log(`[x-cadence] Generated reply: ${reply.substring(0, 50)}...`);
       const result = await xBrowser.replyToTweet(mention.url, reply);
 
       if (result.success) {
@@ -612,6 +650,11 @@ async function checkMentions() {
         console.log(`[x-cadence] Replied to @${mention.username}`);
 
         recordTweet('reply', reply, mention);
+      } else {
+        console.error(`[x-cadence] Failed to reply to @${mention.username}: ${result.error}`);
+        // Still track failed attempts to avoid retrying forever
+        state.repliedMentions.push(mention.url);
+        saveState(state);
       }
 
       // Don't spam replies
@@ -778,6 +821,9 @@ async function generateCommunityReply(post) {
   const roomContext = getRoomContext();
   const speechTraining = getKOLSpeechTraining();
 
+  // Get conversation history with this user
+  const conversationHistory = getConversationHistory(post.username);
+
   // Check if they're a known KOL
   let kolContext = '';
   const kolInfo = kolData[post.username?.toLowerCase()];
@@ -792,7 +838,7 @@ KOL INTEL for @${post.username}:
 
 Post from @${post.username}: "${post.text}"
 ${kolContext}
-
+${conversationHistory ? `\n${conversationHistory}\nYou've talked to this person before - continue the relationship naturally.\n` : ''}
 ${speechTraining}
 
 Recent room activity:
