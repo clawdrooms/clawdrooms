@@ -352,36 +352,58 @@
 
         let messagesHtml = '';
         if (convo.messages) {
+          // Helper to check if content is just a label/noise
+          const isLabelOrNoise = (text) => {
+            if (!text) return true;
+            const trimmed = text.trim().toLowerCase();
+            const noisePatterns = [
+              /^(developer|assistant)[:.]?$/i,
+              /^\.{2,}$/,
+              /^\*[^*]+\*\s*\.{2,}$/,
+              /^[\s\*\.]+$/
+            ];
+            return noisePatterns.some(p => p.test(trimmed)) || trimmed.length < 3;
+          };
+
           // Parse and split individual messages
           const parsedMessages = [];
           convo.messages.forEach(msg => {
             const content = msg.content || '';
-            // Check for embedded conversation formats
-            const hasEmbeddedConvo = /\*\*(Developer|Assistant) Clawd:\*\*|^(developer|assistant):/im.test(content);
+            if (isLabelOrNoise(content)) return;
 
-            if (hasEmbeddedConvo) {
+            const hasBoldFormat = /\*\*(Developer|Assistant) Clawd:\*\*/i.test(content);
+            const hasSimpleFormat = /^(developer|assistant):\s*\S/im.test(content);
+
+            if (hasBoldFormat) {
               const parts = content.split(/(?=\*\*(Developer|Assistant) Clawd:\*\*)/i);
               for (const part of parts) {
                 const trimmed = part.trim();
-                if (!trimmed) continue;
+                if (isLabelOrNoise(trimmed)) continue;
                 const match = trimmed.match(/^\*\*(Developer|Assistant) Clawd:\*\*\s*(.+)$/is);
-                if (match) {
+                if (match && !isLabelOrNoise(match[2])) {
                   parsedMessages.push({
                     agent: match[1].toLowerCase() === 'developer' ? 'developer' : 'assistant',
                     content: match[2].trim(),
                     timestamp: msg.timestamp
                   });
-                } else {
-                  const simpleMatch = trimmed.match(/^(developer|assistant):\s*(.+)$/is);
-                  if (simpleMatch) {
-                    parsedMessages.push({
-                      agent: simpleMatch[1].toLowerCase(),
-                      content: simpleMatch[2].trim(),
-                      timestamp: msg.timestamp
-                    });
-                  } else if (trimmed && !trimmed.startsWith('...')) {
-                    parsedMessages.push({ agent: msg.agent, content: trimmed, timestamp: msg.timestamp });
-                  }
+                } else if (!isLabelOrNoise(trimmed)) {
+                  parsedMessages.push({ agent: msg.agent, content: trimmed, timestamp: msg.timestamp });
+                }
+              }
+            } else if (hasSimpleFormat) {
+              const parts = content.split(/(?=^(?:developer|assistant):\s*)/im);
+              for (const part of parts) {
+                const trimmed = part.trim();
+                if (isLabelOrNoise(trimmed)) continue;
+                const simpleMatch = trimmed.match(/^(developer|assistant):\s*(.+)$/is);
+                if (simpleMatch && !isLabelOrNoise(simpleMatch[2])) {
+                  parsedMessages.push({
+                    agent: simpleMatch[1].toLowerCase(),
+                    content: simpleMatch[2].trim(),
+                    timestamp: msg.timestamp
+                  });
+                } else if (!isLabelOrNoise(trimmed)) {
+                  parsedMessages.push({ agent: msg.agent, content: trimmed, timestamp: msg.timestamp });
                 }
               }
             } else {

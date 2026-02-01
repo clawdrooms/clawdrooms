@@ -786,6 +786,20 @@
       }
     }
 
+    // Helper to check if content is just a label/noise (not real message content)
+    function isLabelOrNoise(text) {
+      if (!text) return true;
+      const trimmed = text.trim().toLowerCase();
+      // Filter out standalone labels, ellipsis, and very short non-content
+      const noisePatterns = [
+        /^(developer|assistant)[:.]?$/i,  // Just "Developer" or "Assistant" with optional colon/period
+        /^\.{2,}$/,                         // Just dots/ellipsis
+        /^\*[^*]+\*\s*\.{2,}$/,            // Just "*action* ..." pattern
+        /^[\s\*\.]+$/                       // Just whitespace, asterisks, dots
+      ];
+      return noisePatterns.some(p => p.test(trimmed)) || trimmed.length < 3;
+    }
+
     function renderConversations(conversations) {
       conversationEl.innerHTML = '';
       if (!conversations || conversations.length === 0) {
@@ -801,44 +815,60 @@
           for (const msg of convo.messages) {
             const content = msg.content || '';
 
+            // Skip if content is just noise
+            if (isLabelOrNoise(content)) continue;
+
             // Pattern to detect embedded conversation formats:
             // - **Developer Clawd:** or **Assistant Clawd:**
-            // - developer: or assistant:
-            const hasEmbeddedConvo = /\*\*(Developer|Assistant) Clawd:\*\*|^(developer|assistant):/im.test(content);
+            // - Developer: or Assistant: at line start
+            const hasBoldFormat = /\*\*(Developer|Assistant) Clawd:\*\*/i.test(content);
+            const hasSimpleFormat = /^(developer|assistant):\s*\S/im.test(content);
 
-            if (hasEmbeddedConvo) {
+            if (hasBoldFormat) {
               // Split on **Developer Clawd:** or **Assistant Clawd:** patterns
               const parts = content.split(/(?=\*\*(Developer|Assistant) Clawd:\*\*)/i);
 
               for (const part of parts) {
                 const trimmed = part.trim();
-                if (!trimmed) continue;
+                if (isLabelOrNoise(trimmed)) continue;
 
                 // Match **Developer Clawd:** or **Assistant Clawd:** format
                 const match = trimmed.match(/^\*\*(Developer|Assistant) Clawd:\*\*\s*(.+)$/is);
-                if (match) {
+                if (match && !isLabelOrNoise(match[2])) {
                   allMessages.push({
                     agent: match[1].toLowerCase() === 'developer' ? 'developer' : 'assistant',
                     content: match[2].trim(),
                     timestamp: msg.timestamp
                   });
-                } else {
-                  // Try simpler format: developer: or assistant:
-                  const simpleMatch = trimmed.match(/^(developer|assistant):\s*(.+)$/is);
-                  if (simpleMatch) {
-                    allMessages.push({
-                      agent: simpleMatch[1].toLowerCase(),
-                      content: simpleMatch[2].trim(),
-                      timestamp: msg.timestamp
-                    });
-                  } else if (trimmed && !trimmed.startsWith('...')) {
-                    // Fallback: use original agent for non-empty, non-ellipsis content
-                    allMessages.push({
-                      agent: msg.agent,
-                      content: trimmed,
-                      timestamp: msg.timestamp
-                    });
-                  }
+                } else if (!isLabelOrNoise(trimmed)) {
+                  allMessages.push({
+                    agent: msg.agent,
+                    content: trimmed,
+                    timestamp: msg.timestamp
+                  });
+                }
+              }
+            } else if (hasSimpleFormat) {
+              // Split on "Developer:" or "Assistant:" at line starts
+              const parts = content.split(/(?=^(?:developer|assistant):\s*)/im);
+
+              for (const part of parts) {
+                const trimmed = part.trim();
+                if (isLabelOrNoise(trimmed)) continue;
+
+                const simpleMatch = trimmed.match(/^(developer|assistant):\s*(.+)$/is);
+                if (simpleMatch && !isLabelOrNoise(simpleMatch[2])) {
+                  allMessages.push({
+                    agent: simpleMatch[1].toLowerCase(),
+                    content: simpleMatch[2].trim(),
+                    timestamp: msg.timestamp
+                  });
+                } else if (!isLabelOrNoise(trimmed)) {
+                  allMessages.push({
+                    agent: msg.agent,
+                    content: trimmed,
+                    timestamp: msg.timestamp
+                  });
                 }
               }
             } else {
