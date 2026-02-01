@@ -525,11 +525,13 @@ function recordTweet(type, content, mention = null) {
     tweets = JSON.parse(fs.readFileSync(tweetsFile, 'utf8'));
   }
 
+  const timestamp = new Date().toISOString();
+
   tweets.push({
     type,
     content,
     mention: mention ? { username: mention.username, text: mention.text } : null,
-    timestamp: new Date().toISOString()
+    timestamp
   });
 
   // Keep last 500 tweets
@@ -538,6 +540,49 @@ function recordTweet(type, content, mention = null) {
   }
 
   fs.writeFileSync(tweetsFile, JSON.stringify(tweets, null, 2));
+
+  // Also log to actions.json for activity log display
+  logToActivityLog(type, content, timestamp);
+}
+
+/**
+ * Log action to activity log (actions.json)
+ */
+function logToActivityLog(type, content, timestamp) {
+  const actionsFile = path.join(PATHS.memory, 'actions.json');
+  let actions = [];
+  
+  try {
+    if (fs.existsSync(actionsFile)) {
+      actions = JSON.parse(fs.readFileSync(actionsFile, 'utf8'));
+    }
+  } catch (err) {
+    console.error('[x-cadence] Failed to read actions.json:', err.message);
+    actions = [];
+  }
+
+  // Map type to activity log format
+  const actionType = type === 'timeline' ? 'TWEET' : 
+                     type === 'community' ? 'COMMUNITY_POST' : 
+                     type === 'reply' ? 'REPLY' : 'TWEET';
+
+  actions.push({
+    type: actionType,
+    content,
+    result: { success: true, status: 'Posted to X' },
+    timestamp
+  });
+
+  // Keep last 100 actions
+  if (actions.length > 100) {
+    actions = actions.slice(-100);
+  }
+
+  try {
+    fs.writeFileSync(actionsFile, JSON.stringify(actions, null, 2));
+  } catch (err) {
+    console.error('[x-cadence] Failed to write actions.json:', err.message);
+  }
 }
 
 /**
