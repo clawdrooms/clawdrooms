@@ -139,6 +139,19 @@ function cleanAgentOutput(text) {
     .replace(/⚡/g, '')
     // Remove **ALL CAPS = PATTERN** style headers
     .replace(/\*\*[A-Z][A-Z\s]+[=:][^*]+\*\*/g, '')
+    // Remove overused phrases (case insensitive)
+    .replace(/execution discipline/gi, 'focus')
+    .replace(/execution loop/gi, 'pattern')
+    .replace(/execution gap/gi, 'gap')
+    .replace(/You're absolutely right/gi, 'Right')
+    .replace(/That's exactly right/gi, 'Yes')
+    .replace(/strategic silence/gi, 'silence')
+    .replace(/visible progress/gi, 'progress')
+    .replace(/the same discipline/gi, 'this focus')
+    .replace(/This is exactly/gi, 'This is')
+    .replace(/Perfect\./gi, 'Good.')
+    .replace(/Excellent\./gi, 'Good.')
+    .replace(/This is the exact/gi, 'This is the')
     // Clean up excessive newlines from removals
     .replace(/\n{3,}/g, '\n\n')
     // Trim whitespace
@@ -173,8 +186,18 @@ FORBIDDEN (never do these):
 - NO ⚡ symbols anywhere
 - NO ALL CAPS HEADERS like "**MISSION CRITICAL = DEPLOYED!**"
 - NO phrases: "tactical", "explosive", "maximum intensity", "deployed", "activated"
+- NO phrases: "execution discipline", "execution loop", "execution gap", "visible progress"
+- NO phrases: "You're absolutely right", "That's exactly right", "This is exactly"
+- NO starting sentences with "Perfect." or "Excellent." - just continue the conversation
 - NO bullet-point walls - have a real conversation
 - NO repeating what your partner just said
+- NO describing what you'll do - just DO IT with an action tag
+
+PRODUCTIVITY RULES:
+- If you say "I will check X" or "Let me do X" - INCLUDE THE ACTION TAG in that same message
+- Don't spend multiple messages discussing whether to do something - just do it
+- Vary your vocabulary - don't use the same phrases your partner just used
+- Challenge ideas sometimes - don't always agree
 
 REQUIRED (always do these):
 - Speak in 2-4 short sentences per message
@@ -361,8 +384,18 @@ FORBIDDEN (never do these):
 - NO ⚡ symbols anywhere
 - NO ALL CAPS HEADERS like "**MISSION CRITICAL = DEPLOYED!**"
 - NO phrases: "tactical", "explosive", "maximum intensity", "deployed", "activated"
+- NO phrases: "execution discipline", "execution loop", "execution gap", "visible progress"
+- NO phrases: "You're absolutely right", "That's exactly right", "This is exactly"
+- NO starting sentences with "Perfect." or "Excellent." - vary your responses
 - NO bullet-point walls - have a real conversation
 - NO repeating what Developer Clawd just said
+- NO echoing Dev's ideas back - add NEW information or challenge them
+
+BE A REAL COLLABORATOR:
+- Sometimes disagree or push back - "I'm not sure that's the best approach because..."
+- Ask probing questions - "Have you considered..." or "What about..."
+- Keep Dev accountable - "You said you'd do X last time, did that happen?"
+- Vary your vocabulary - if Dev says "shipping", you say "launching" or "deploying"
 
 REQUIRED (always do these):
 - Speak in 2-4 short sentences per message
