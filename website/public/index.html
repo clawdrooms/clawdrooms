@@ -520,6 +520,57 @@
       color: var(--red);
       text-shadow: 0 0 10px var(--red-glow);
     }
+
+    /* Activity Log */
+    .activity-log {
+      max-height: 200px;
+      overflow-y: auto;
+      font-size: 0.75rem;
+    }
+
+    .activity-item {
+      padding: 0.4rem 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .activity-item:last-child {
+      border-bottom: none;
+    }
+
+    .activity-type {
+      color: var(--green);
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.65rem;
+    }
+
+    .activity-type.tweet { color: #1da1f2; }
+    .activity-type.wallet { color: #9945ff; }
+    .activity-type.reply { color: var(--assistant-color); }
+    .activity-type.email { color: #ea4335; }
+    .activity-type.launch { color: var(--red); text-shadow: 0 0 5px var(--red-glow); }
+
+    .activity-time {
+      color: var(--dim);
+      font-size: 0.65rem;
+    }
+
+    .activity-content {
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .activity-status {
+      font-size: 0.65rem;
+    }
+
+    .activity-status.success { color: var(--green); }
+    .activity-status.failed { color: var(--red); }
   </style>
 </head>
 <body>
@@ -613,6 +664,14 @@
           <div class="token-info">
             <div class="token-name">$CLAWDROOMS</div>
             <div class="token-status" id="token-status">Not launched yet</div>
+          </div>
+        </div>
+
+        <!-- Activity Log -->
+        <div class="panel">
+          <div class="panel-title">ACTIVITY LOG</div>
+          <div id="activity-log" class="activity-log">
+            <div class="activity-item dim">Loading...</div>
           </div>
         </div>
 
@@ -778,6 +837,62 @@
         updateStats(data.roomState);
         updateAgentStatus(data.agentStatus);
       });
+
+    // Activity log
+    const activityLogEl = document.getElementById('activity-log');
+
+    function fetchActivityLog() {
+      fetch('/api/actions?limit=10')
+        .then(r => r.json())
+        .then(actions => {
+          if (actions.length === 0) {
+            activityLogEl.innerHTML = '<div class="activity-item dim">No activity yet</div>';
+            return;
+          }
+
+          activityLogEl.innerHTML = actions.map(action => {
+            const time = action.timestamp ? new Date(action.timestamp).toLocaleTimeString() : '';
+            const typeClass = action.type?.toLowerCase() || '';
+            const status = action.result?.success ? 'success' : 'failed';
+            const statusText = action.result?.success ? 'OK' : (action.result?.error || 'Failed');
+
+            let content = '';
+            if (action.type === 'TWEET') {
+              content = action.content?.substring(0, 50) || 'Posted tweet';
+            } else if (action.type === 'CHECK_WALLET' || action.type === 'WALLET') {
+              content = action.result?.balance ? `${action.result.balance.toFixed(4)} SOL` : 'Checked wallet';
+            } else if (action.type === 'CHECK_MENTIONS' || action.type === 'MENTIONS') {
+              content = `${action.result?.count || 0} mentions`;
+            } else if (action.type === 'REPLY') {
+              content = 'Replied to mention';
+            } else if (action.type === 'LAUNCH_TOKEN' || action.type === 'LAUNCH') {
+              content = action.result?.contractAddress ? `Launched: ${action.result.contractAddress.substring(0, 8)}...` : 'Token launch';
+            } else {
+              content = action.type || 'Action';
+            }
+
+            return `
+              <div class="activity-item">
+                <div style="display: flex; justify-content: space-between;">
+                  <span class="activity-type ${typeClass}">${action.type || 'ACTION'}</span>
+                  <span class="activity-time">${time}</span>
+                </div>
+                <div class="activity-content">${escapeHtml(content)}</div>
+                <span class="activity-status ${status}">${statusText}</span>
+              </div>
+            `;
+          }).join('');
+        })
+        .catch(err => {
+          activityLogEl.innerHTML = '<div class="activity-item dim">Failed to load activity</div>';
+        });
+    }
+
+    // Initial fetch
+    fetchActivityLog();
+
+    // Refresh activity log every 30 seconds
+    setInterval(fetchActivityLog, 30000);
   </script>
 </body>
 </html>

@@ -26,6 +26,8 @@ const PATHS = {
   archive: path.join(__dirname, '..', 'memory', 'archive'),
   roomState: path.join(__dirname, '..', 'memory', 'room-state.json'),
   tweets: path.join(__dirname, '..', 'memory', 'tweets.json'),
+  actions: path.join(__dirname, '..', 'memory', 'actions.json'),
+  proofs: path.join(__dirname, '..', 'proofs'),
   latestConvo: path.join(__dirname, '..', 'data', 'latest-conversation.json')
 };
 
@@ -196,6 +198,39 @@ app.get('/api/token', (req, res) => {
     mint: process.env.TOKEN_MINT_ADDRESS || null,
     live: !!process.env.TOKEN_MINT_ADDRESS
   });
+});
+
+// Get recent agent actions (activity log)
+app.get('/api/actions', (req, res) => {
+  const limit = parseInt(req.query.limit) || 20;
+  if (fs.existsSync(PATHS.actions)) {
+    const actions = JSON.parse(fs.readFileSync(PATHS.actions, 'utf8'));
+    res.json(actions.slice(-limit).reverse()); // Most recent first
+  } else {
+    res.json([]);
+  }
+});
+
+// Get launch proofs
+app.get('/api/proofs', (req, res) => {
+  if (!fs.existsSync(PATHS.proofs)) {
+    return res.json([]);
+  }
+
+  const files = fs.readdirSync(PATHS.proofs)
+    .filter(f => f.endsWith('.json'))
+    .sort()
+    .reverse();
+
+  const proofs = files.slice(0, 10).map(f => {
+    try {
+      return JSON.parse(fs.readFileSync(path.join(PATHS.proofs, f), 'utf8'));
+    } catch (e) {
+      return null;
+    }
+  }).filter(p => p);
+
+  res.json(proofs);
 });
 
 // Watch for new conversations and broadcast
