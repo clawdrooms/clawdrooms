@@ -28,15 +28,56 @@ const MY_USER_ID = '2017520782578974720';
 // State file for tracking last mention ID
 const STATE_FILE = path.join(__dirname, '..', 'data', 'x-api-state.json');
 
+// In-memory rate limit tracking (persisted to state file)
+let rateLimitUntil = 0;
+
 function loadApiState() {
   try {
     if (fs.existsSync(STATE_FILE)) {
-      return JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
+      const state = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
+      // Restore rate limit from state
+      if (state.rateLimitUntil && state.rateLimitUntil > Date.now()) {
+        rateLimitUntil = state.rateLimitUntil;
+      }
+      return state;
     }
   } catch (err) {
     console.error('[x-api] Failed to load state:', err.message);
   }
-  return { lastMentionId: null, processedMentions: [] };
+  return { lastMentionId: null, processedMentions: [], rateLimitUntil: 0 };
+}
+
+/**
+ * Check if we're currently rate limited
+ */
+function isRateLimited() {
+  if (rateLimitUntil > Date.now()) {
+    const waitMins = Math.ceil((rateLimitUntil - Date.now()) / 60000);
+    console.log(`[x-api] Skipping - rate limited for ${waitMins} more minutes`);
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Set rate limit backoff
+ */
+function setRateLimitBackoff(resetTime) {
+  // If we have a reset time from the API, use it + 1 minute buffer
+  if (resetTime) {
+    rateLimitUntil = (resetTime * 1000) + 60000;
+  } else {
+    // Default: back off for 15 minutes
+    rateLimitUntil = Date.now() + (15 * 60 * 1000);
+  }
+
+  // Save to state
+  const state = loadApiState();
+  state.rateLimitUntil = rateLimitUntil;
+  saveApiState(state);
+
+  const waitMins = Math.ceil((rateLimitUntil - Date.now()) / 60000);
+  console.log(`[x-api] Rate limit backoff set for ${waitMins} minutes`);
 }
 
 function saveApiState(state) {
@@ -119,6 +160,11 @@ function checkAccountQuality(user) {
  * Returns array of mention objects with user info for quality filtering
  */
 async function getMentions() {
+  // Check rate limit before making API call
+  if (isRateLimited()) {
+    return [];
+  }
+
   const state = loadApiState();
 
   try {
@@ -201,12 +247,9 @@ async function getMentions() {
     return results;
 
   } catch (err) {
-    // Handle rate limiting
+    // Handle rate limiting with proper backoff
     if (err.code === 429 || err.rateLimit) {
-      const resetTime = err.rateLimit?.reset
-        ? new Date(err.rateLimit.reset * 1000).toLocaleTimeString()
-        : 'unknown';
-      console.error(`[x-api] Rate limited. Reset at: ${resetTime}`);
+      setRateLimitBackoff(err.rateLimit?.reset);
       return [];
     }
 
@@ -219,6 +262,11 @@ async function getMentions() {
  * Reply to a tweet using X API v2
  */
 async function replyToTweet(tweetId, text) {
+  // Check rate limit before making API call
+  if (isRateLimited()) {
+    return { success: false, error: 'Rate limited - backing off' };
+  }
+
   const state = loadApiState();
 
   try {
@@ -242,13 +290,10 @@ async function replyToTweet(tweetId, text) {
     };
 
   } catch (err) {
-    // Handle rate limiting
+    // Handle rate limiting with proper backoff
     if (err.code === 429 || err.rateLimit) {
-      const resetTime = err.rateLimit?.reset
-        ? new Date(err.rateLimit.reset * 1000).toLocaleTimeString()
-        : 'unknown';
-      console.error(`[x-api] Rate limited on reply. Reset at: ${resetTime}`);
-      return { success: false, error: `Rate limited until ${resetTime}` };
+      setRateLimitBackoff(err.rateLimit?.reset);
+      return { success: false, error: 'Rate limited - backing off' };
     }
 
     // Handle duplicate tweet

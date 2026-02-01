@@ -50,7 +50,7 @@ const CONFIG = {
   timelineIntervalMs: 15 * 60 * 1000,      // 15 minutes between timeline posts
   timelinePostsPerCycle: 3,                 // 3 timeline posts before community
   communityAfterTimelines: 3,               // Community post after 3 timeline posts
-  mentionCheckMs: 60 * 1000,                // Check mentions every 1 minute
+  mentionCheckMs: 5 * 60 * 1000,             // Check mentions every 5 minutes (rate limit friendly)
   maxTweetsPerDay: 100,                     // Safety limit
   model: 'claude-sonnet-4-20250514'
 };
