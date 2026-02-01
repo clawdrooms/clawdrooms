@@ -11,6 +11,10 @@
  * [ACTION:CHECK_EMAIL][/ACTION]
  * [ACTION:SEND_EMAIL]{"to":"...","subject":"...","body":"..."}[/ACTION]
  * [ACTION:LAUNCH_TOKEN][/ACTION] - Launch token on pump.fun
+ * [ACTION:BUY_TOKEN]{"amount": 0.1}[/ACTION] - Buy tokens with SOL
+ * [ACTION:SELL_TOKEN]{"amount": 1000}[/ACTION] - Sell tokens for SOL
+ * [ACTION:BURN_TOKEN]{"amount": 1000}[/ACTION] - Burn tokens permanently
+ * [ACTION:LOCK_TOKEN]{"amount": 1000}[/ACTION] - Lock tokens (send to dead address)
  */
 
 require('dotenv').config();
@@ -425,6 +429,94 @@ async function launchToken() {
 }
 
 /**
+ * Buy tokens with SOL
+ */
+async function buyToken(content) {
+  console.log('[action-executor] Buying tokens...');
+
+  try {
+    const data = typeof content === 'string' ? JSON.parse(content) : content;
+    const amount = data.amount || data.amountSOL || 0.1;
+
+    const tokenActions = require('./token-actions');
+    const result = await tokenActions.buyTokens(amount);
+
+    return result;
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Sell tokens for SOL
+ */
+async function sellToken(content) {
+  console.log('[action-executor] Selling tokens...');
+
+  try {
+    const data = typeof content === 'string' ? JSON.parse(content) : content;
+    const amount = data.amount || data.amountTokens || 0;
+
+    if (amount <= 0) {
+      return { success: false, error: 'Invalid amount' };
+    }
+
+    const tokenActions = require('./token-actions');
+    const result = await tokenActions.sellTokens(amount);
+
+    return result;
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Burn tokens permanently
+ */
+async function burnToken(content) {
+  console.log('[action-executor] Burning tokens...');
+
+  try {
+    const data = typeof content === 'string' ? JSON.parse(content) : content;
+    const amount = data.amount || data.amountTokens || 0;
+
+    if (amount <= 0) {
+      return { success: false, error: 'Invalid amount' };
+    }
+
+    const tokenActions = require('./token-actions');
+    const result = await tokenActions.burnTokens(amount);
+
+    return result;
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Lock tokens (send to dead address)
+ */
+async function lockToken(content) {
+  console.log('[action-executor] Locking tokens...');
+
+  try {
+    const data = typeof content === 'string' ? JSON.parse(content) : content;
+    const amount = data.amount || data.amountTokens || 0;
+
+    if (amount <= 0) {
+      return { success: false, error: 'Invalid amount' };
+    }
+
+    const tokenActions = require('./token-actions');
+    const result = await tokenActions.lockTokens(amount);
+
+    return result;
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+/**
  * Execute an action
  */
 async function executeAction(action) {
@@ -472,6 +564,26 @@ async function executeAction(action) {
     case 'LAUNCH_TOKEN':
     case 'LAUNCH':
       result = await launchToken();
+      break;
+
+    case 'BUY_TOKEN':
+    case 'BUY':
+      result = await buyToken(action.content);
+      break;
+
+    case 'SELL_TOKEN':
+    case 'SELL':
+      result = await sellToken(action.content);
+      break;
+
+    case 'BURN_TOKEN':
+    case 'BURN':
+      result = await burnToken(action.content);
+      break;
+
+    case 'LOCK_TOKEN':
+    case 'LOCK':
+      result = await lockToken(action.content);
       break;
 
     default:
@@ -543,6 +655,10 @@ module.exports = {
   checkEmail,
   sendEmail,
   launchToken,
+  buyToken,
+  sellToken,
+  burnToken,
+  lockToken,
   isSpamOrLowQuality
 };
 
