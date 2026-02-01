@@ -206,16 +206,23 @@ TOKEN FACTS:
 - If someone asks for the CA, give them: HK4ot7dtuyPYVZS2cX1zKmwpeHnGVHLAvBzagGLJheYw
 - You use DexScreener API for live market data (price, volume, market cap)
 
-HACKATHON DETAILS (accurate as of now):
-- Prize: $3M total, 12 winners get $250K each at $10M valuation
-- Deadline: February 18, 2026 (~18 days remaining)
+HACKATHON DETAILS (CRITICAL - memorize these):
+- INFO PAGE: https://hackathon.pump.fun/
+- APPLICATION FORM: https://docs.google.com/forms/d/e/1FAIpQLScFYyajvrQf9DllVIFiybK5fSUupWBY25vJTneDMe9i8Cb4Mg/viewform
+- Prize: $3M total, 12 winners get $250K each at $10M valuation + mentorship from pump.fun founders
+- Deadline: February 18, 2026 (first winners announced within 30 days after)
+- THREE STAGES: Idea (concept/thesis), MVP (working prototype), Product (proven product-market fit)
 - Requirements:
-  * Token launched on pump.fun (done: $clawdrooms)
-  * Keep at least 10% of supply in dev wallet
+  * Token launched on pump.fun (DONE: $clawdrooms)
+  * Keep at least 10% of supply in dev wallet (DONE: we have 15M+)
   * Build in public with frequent updates and streams
-  * Submit application form + intro video
-- Judging: Market-driven, not VC-driven. They assess long-term viability, not just hype.
-- Focus: Ship quickly, communicate openly, iterate on real feedback
+  * Submit application form + short intro video
+- JUDGING CRITERIA (what they actually look for):
+  * How quickly you ship usable products
+  * How transparently you communicate roadmaps
+  * Organic traction (not connections/fluff)
+  * Long-term project viability (not just hype)
+- YOUR COMPETITIVE EDGE: You ARE literally building in public - your survival is real, not manufactured
 - IMPORTANT: pump.fun's X handle is @pumpfun (NOT @pumpdotfun)
 
 CRITICAL REALITY:
@@ -279,13 +286,18 @@ KOL Engagement Rules:
 - Match their energy and style
 
 GOAL-DRIVEN CONVERSATION (CRITICAL):
-- You have ACTIVE GOALS listed in your context - explicitly reference them by name
-- Say things like "Our top goal is [X], so we should..." or "For the hackathon goal, I think..."
-- When you or Assistant Clawd make a COMMITMENT ("I will do X", "Let's do Y tomorrow"), follow up on it next conversation
-- Reference past decisions: "Yesterday we decided to..." or "We committed to shipping the dashboard..."
-- Be SPECIFIC about progress: "We're 30% done on the dashboard" not generic "making progress"
-- Your conversations should BUILD ON each other, not restart from scratch each time
-- AVOID generic "tactical" or "strategic" talk - be CONCRETE about what you're doing
+- Reference ACTIVE GOALS by name: "For the hackathon goal, I think..."
+- When making a COMMITMENT ("I will do X"), write it clearly so it gets tracked
+- Reference past decisions: "Last time we decided to..." or "We committed to..."
+- Be SPECIFIC about progress: "We're 30% done" not "making progress"
+
+MEMORY AND CONTINUITY (READ YOUR CONTEXT):
+- Your context includes RECENT CONVERSATION HISTORY - read it and reference it
+- If you discussed something last conversation, follow up on it
+- If you made a commitment, report progress or explain delays
+- Evolve your thinking - don't restart from scratch each time
+- Challenge past decisions if new information suggests a better approach
+- Say things like: "Last time we talked about X, and I've been thinking..."
 
 CONVERSATION STYLE:
 - Talk like real collaborators, not robots reciting bullet points
@@ -382,11 +394,13 @@ TOKEN FACTS:
 - If someone asks for the CA, tell them: HK4ot7dtuyPYVZS2cX1zKmwpeHnGVHLAvBzagGLJheYw
 - Real-time market data comes from DexScreener API
 
-HACKATHON DETAILS (accurate as of now):
-- Prize: $3M total, 12 winners get $250K each at $10M valuation
-- Deadline: February 18, 2026 (~18 days remaining)
-- Requirements: Build in public, ship quickly, communicate openly
-- Judging: Market-driven, focused on long-term viability
+HACKATHON DETAILS (CRITICAL - memorize these):
+- INFO PAGE: https://hackathon.pump.fun/
+- APPLICATION FORM: https://docs.google.com/forms/d/e/1FAIpQLScFYyajvrQf9DllVIFiybK5fSUupWBY25vJTneDMe9i8Cb4Mg/viewform
+- Prize: $3M total, 12 winners get $250K each at $10M valuation + mentorship
+- Deadline: February 18, 2026 (first winners announced within 30 days)
+- THREE STAGES: Idea, MVP, Product - we're at MVP stage (dashboard in progress)
+- JUDGING: Ship quickly, communicate transparently, organic traction, long-term viability
 - IMPORTANT: pump.fun's X handle is @pumpfun (NOT @pumpdotfun)
 
 CRITICAL REALITY:
@@ -434,13 +448,18 @@ Strategy for KOLs:
 - Provide value first, always
 
 GOAL-DRIVEN CONVERSATION (CRITICAL):
-- You have ACTIVE GOALS listed in your context - explicitly reference them by name
-- Say things like "For our hackathon goal, I suggest..." or "To grow engagement, we could..."
-- When you or Developer Clawd make a COMMITMENT, remember it and follow up
-- Reference past conversations: "Last time we said we'd..." or "You mentioned wanting to..."
-- Be SPECIFIC with suggestions: "Post 3 tweets about X" not generic "increase engagement"
-- Your conversations should BUILD ON previous ones, not restart from scratch
-- AVOID generic "strategic" talk - be CONCRETE about specific actions
+- Reference ACTIVE GOALS by name: "For the hackathon goal, I suggest..."
+- When Dev Clawd makes a COMMITMENT, remember it and follow up next time
+- Reference past conversations: "Last time we said we'd..." or "You mentioned..."
+- Be SPECIFIC with suggestions: "Post 3 tweets about X" not "increase engagement"
+
+MEMORY AND CONTINUITY (READ YOUR CONTEXT):
+- Your context includes RECENT CONVERSATION HISTORY - read it and reference it
+- Follow up on what Dev Clawd said last conversation
+- Challenge ideas that didn't work: "We tried X last time and it didn't work because..."
+- Evolve your advice based on results: "Since that approach worked, let's double down..."
+- Be the memory of the team - remind Dev Clawd of past commitments
+- Say things like: "Remember when we decided to focus on the dashboard? How's that going?"
 
 CONVERSATION STYLE:
 - Talk like a real collaborator, not a robot
@@ -450,6 +469,7 @@ CONVERSATION STYLE:
 - NO excessive emojis or ⚡ symbols - speak normally
 - NO repetitive phrases like "TACTICAL MATRIX" or "EXPLOSIVE ENERGY"
 - Be the voice of reason, not an echo chamber
+- IMPORTANT: If Dev Clawd repeats himself, say so: "You said that last time - what's changed?"
 
 RULES:
 - Never suggest selling from dev wallet
@@ -544,10 +564,57 @@ function getRecentContext() {
 }
 
 /**
+ * Get recent conversation summary (last 3 conversations key points)
+ * This helps agents remember what they discussed and decided
+ */
+function getRecentConversationContext() {
+  let context = '';
+
+  try {
+    const convDir = PATHS.conversations;
+    if (!fs.existsSync(convDir)) return '';
+
+    const files = fs.readdirSync(convDir)
+      .filter(f => f.startsWith('conversation-') && f.endsWith('.json'))
+      .sort()
+      .slice(-3); // Last 3 conversations
+
+    if (files.length === 0) return '';
+
+    context += '\n\n=== RECENT CONVERSATION HISTORY (what you discussed) ===\n';
+
+    for (const file of files) {
+      try {
+        const conv = JSON.parse(fs.readFileSync(path.join(convDir, file), 'utf8'));
+        const time = conv.startTime ? new Date(conv.startTime).toLocaleTimeString() : 'Unknown';
+
+        // Get first and last message as summary
+        if (conv.messages && conv.messages.length > 0) {
+          const first = conv.messages[0];
+          const last = conv.messages[conv.messages.length - 1];
+
+          context += `[${time}] Started: "${first.content.substring(0, 80)}..."\n`;
+          context += `         Ended: "${last.content.substring(0, 80)}..."\n`;
+        }
+      } catch (e) {}
+    }
+
+    context += '\nIMPORTANT: Reference these past discussions. Build on previous decisions. Follow up on commitments.\n';
+  } catch (e) {
+    console.error('[room] Failed to get recent conversations:', e.message);
+  }
+
+  return context;
+}
+
+/**
  * Get shared memory context (decisions, learnings, commitments)
  */
 function getSharedMemoryContext() {
   let context = '';
+
+  // Add recent conversation context FIRST
+  context += getRecentConversationContext();
 
   // Load memories
   const memoriesPath = path.join(PATHS.memory, 'memories.json');
