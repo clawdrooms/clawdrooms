@@ -16,6 +16,25 @@ const path = require('path');
 const Anthropic = require('@anthropic-ai/sdk').default;
 const xBrowser = require('./x-browser-poster');
 
+// Load token config for contract address
+const TOKEN_CONFIG_PATH = path.join(__dirname, '..', 'website', 'token-config.json');
+let tokenConfig = { contractAddress: 'HK4ot7dtuyPYVZS2cX1zKmwpeHnGVHLAvBzagGLJheYw' };
+try {
+  if (fs.existsSync(TOKEN_CONFIG_PATH)) {
+    tokenConfig = JSON.parse(fs.readFileSync(TOKEN_CONFIG_PATH, 'utf8'));
+  }
+} catch (err) {
+  console.error('[x-cadence] Failed to load token config:', err.message);
+}
+
+// Contract address - the source of truth
+const CONTRACT_ADDRESS = tokenConfig.contractAddress || process.env.TOKEN_MINT_ADDRESS || 'HK4ot7dtuyPYVZS2cX1zKmwpeHnGVHLAvBzagGLJheYw';
+const DEXSCREENER_API = `https://api.dexscreener.com/latest/dex/tokens/${CONTRACT_ADDRESS}`;
+
+// Cache for market data
+let marketDataCache = { data: null, lastFetch: 0 };
+const MARKET_CACHE_TTL = 60 * 1000; // 1 minute cache
+
 // Configuration
 const CONFIG = {
   timelineIntervalMs: 15 * 60 * 1000,      // 15 minutes between timeline posts
@@ -132,20 +151,77 @@ function getTopKOLs() {
 }
 
 /**
+ * Fetch live market data from DexScreener API
+ */
+async function fetchMarketData() {
+  // Return cached data if fresh
+  if (marketDataCache.data && (Date.now() - marketDataCache.lastFetch) < MARKET_CACHE_TTL) {
+    return marketDataCache.data;
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+
+    const response = await fetch(DEXSCREENER_API, { signal: controller.signal });
+    clearTimeout(timeout);
+
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+
+    if (data.pairs && data.pairs.length > 0) {
+      const pair = data.pairs[0];
+      marketDataCache.data = {
+        price: pair.priceUsd,
+        priceChange24h: pair.priceChange?.h24,
+        priceChange1h: pair.priceChange?.h1,
+        volume24h: pair.volume?.h24,
+        liquidity: pair.liquidity?.usd,
+        marketCap: pair.marketCap || pair.fdv,
+        txns24h: (pair.txns?.h24?.buys || 0) + (pair.txns?.h24?.sells || 0)
+      };
+      marketDataCache.lastFetch = Date.now();
+      console.log('[x-cadence] Market data fetched:', marketDataCache.data.price);
+    }
+  } catch (err) {
+    console.error('[x-cadence] Failed to fetch market data:', err.message);
+  }
+
+  return marketDataCache.data;
+}
+
+/**
  * Get market awareness context
  */
 function getMarketAwareness() {
-  if (kolList.length === 0) return '';
-
   const { tierAPlus, tierA } = getTopKOLs();
   const topHandles = tierAPlus.slice(0, 3).map(k => k.handle).join(', ');
   const traderHandles = tierA.slice(0, 5).map(k => k.handle).join(', ');
 
+  // Include live market data if available
+  let marketStats = '';
+  if (marketDataCache.data) {
+    const m = marketDataCache.data;
+    const priceStr = m.price ? `$${parseFloat(m.price).toFixed(8)}` : 'unknown';
+    const change = m.priceChange24h ? `${m.priceChange24h > 0 ? '+' : ''}${m.priceChange24h.toFixed(1)}%` : '';
+    const mcap = m.marketCap ? `$${(m.marketCap / 1000).toFixed(1)}k` : '';
+    marketStats = `
+LIVE MARKET DATA (from DexScreener):
+- Price: ${priceStr} ${change ? `(${change} 24h)` : ''}
+- Market Cap: ${mcap}
+- 24h Txns: ${m.txns24h || 'unknown'}`;
+  }
+
   return `
+CONTRACT ADDRESS: ${CONTRACT_ADDRESS}
+DexScreener: https://dexscreener.com/solana/${CONTRACT_ADDRESS}
+${marketStats}
+
 MARKET AWARENESS (players you follow):
 - Mega influencers: ${topHandles || '@blknoiz06, @cobie, @aeyakovenko'}
 - Top traders: ${traderHandles || '@Solanadegen, @ratwizardx, @Cented7'}
-You can reference market moves, ecosystem drama, or trader takes (without @-ing them).`;
+You can reference market moves, ecosystem drama, or trader takes (without @-ing them).
+If someone asks for the CA, give them: ${CONTRACT_ADDRESS}`;
 }
 
 /**
@@ -362,6 +438,9 @@ Generate a reply that:
 - Isn't generic or overly promotional
 - Feels like a real conversation
 
+CONTRACT ADDRESS: ${CONTRACT_ADDRESS}
+If someone asks for CA, give them: ${CONTRACT_ADDRESS}
+
 TRUTH RULES - NEVER VIOLATE:
 - VERIFIED FACT: 10% of dev tokens locked until Feb 19, 2026. Proof link: https://app.streamflow.finance/contract/solana/mainnet/5fygpb3SQQzuJgNT16KFnHmaSiD299ZJxh1Lb2uTD85Y
 - If asked about locks, you CAN say "10% locked til Feb 19" and share the proof link
@@ -409,6 +488,9 @@ async function postTimeline() {
     console.log('[x-cadence] Daily tweet limit reached');
     return false;
   }
+
+  // Fetch fresh market data before posting
+  await fetchMarketData();
 
   console.log('[x-cadence] Generating timeline tweet...');
   let tweet = await generateTimelineTweet();
@@ -498,6 +580,9 @@ async function checkMentions() {
   const state = loadState();
 
   console.log('[x-cadence] Checking mentions...');
+
+  // Fetch fresh market data for replies
+  await fetchMarketData();
 
   try {
     const mentions = await xBrowser.getMentions();
@@ -725,6 +810,9 @@ Generate a reply that:
 - Matches the energy of the community (degen, builder, trader vibes)
 - Feels like a real conversation between crypto natives
 - Can share a quick update or insight if relevant
+
+CONTRACT ADDRESS: ${CONTRACT_ADDRESS}
+If someone asks for CA, give them: ${CONTRACT_ADDRESS}
 
 TRUTH RULES - NEVER VIOLATE:
 - VERIFIED FACT: 10% of dev tokens locked until Feb 19, 2026. Proof: https://app.streamflow.finance/contract/solana/mainnet/5fygpb3SQQzuJgNT16KFnHmaSiD299ZJxh1Lb2uTD85Y
