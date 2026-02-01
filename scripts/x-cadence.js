@@ -98,26 +98,54 @@ function sanitizeTweet(text) {
 }
 
 /**
- * Get random KOLs for context in tweets
+ * Get KOL speech training context - teaches how to tweet like a crypto native
  */
-function getRandomKOLContext(count = 2) {
+function getKOLSpeechTraining() {
   if (kolList.length === 0) return '';
 
-  const shuffled = [...kolList].sort(() => Math.random() - 0.5);
-  const selected = shuffled.slice(0, count);
+  // Get varied styles for speech training
+  const withStyles = kolList.filter(k => k.style);
+  const shuffled = [...withStyles].sort(() => Math.random() - 0.5);
+  const selected = shuffled.slice(0, 4);
 
-  return selected.map(k =>
-    `${k.handle} (${k.name}) - ${k.tier} tier, ${k.category || 'trader'}`
-  ).join('\n');
+  let training = 'SPEECH TRAINING (how top traders communicate):\n';
+  for (const k of selected) {
+    training += `- ${k.handle}: "${k.style}"\n`;
+  }
+
+  training += '\nYOUR VOICE SHOULD BE:\n';
+  training += '- Sharp and concise (no verbose explanations)\n';
+  training += '- Authentic reactions (not marketing copy)\n';
+  training += '- Degen-aware (know the culture)\n';
+  training += '- Data-referenced when possible\n';
+
+  return training;
 }
 
 /**
- * Get high-tier KOLs for strategic context
+ * Get high-tier KOLs for market awareness
  */
 function getTopKOLs() {
   const tierAPlus = kolList.filter(k => k.tier === 'A+');
   const tierA = kolList.filter(k => k.tier === 'A');
   return { tierAPlus, tierA };
+}
+
+/**
+ * Get market awareness context
+ */
+function getMarketAwareness() {
+  if (kolList.length === 0) return '';
+
+  const { tierAPlus, tierA } = getTopKOLs();
+  const topHandles = tierAPlus.slice(0, 3).map(k => k.handle).join(', ');
+  const traderHandles = tierA.slice(0, 5).map(k => k.handle).join(', ');
+
+  return `
+MARKET AWARENESS (players you follow):
+- Mega influencers: ${topHandles || '@blknoiz06, @cobie, @aeyakovenko'}
+- Top traders: ${traderHandles || '@Solanadegen, @ratwizardx, @Cented7'}
+You can reference market moves, ecosystem drama, or trader takes (without @-ing them).`;
 }
 
 /**
@@ -149,19 +177,8 @@ function getRoomContext() {
  */
 async function generateTimelineTweet() {
   const roomContext = getRoomContext();
-  const kolContext = getRandomKOLContext(2);
-  const { tierAPlus, tierA } = getTopKOLs();
-
-  // Build KOL awareness section
-  let kolAwareness = '';
-  if (kolList.length > 0) {
-    const topHandles = tierAPlus.slice(0, 3).map(k => k.handle).join(', ');
-    kolAwareness = `
-You're aware of the Solana/crypto ecosystem players:
-Top influencers: ${topHandles || '@blknoiz06, @cobie, @aeyakovenko'}
-Some active traders you've noticed: ${kolContext || '@Solanadegen, @ratwizardx'}
-You can reference observing their takes or the broader conversation, but DON'T @ them directly in tweets.`;
-  }
+  const speechTraining = getKOLSpeechTraining();
+  const marketAwareness = getMarketAwareness();
 
   const prompt = `You are Developer Clawd, an AI agent in a room with Assistant Clawd.
 Your reality: You must generate revenue or your subscription gets cancelled and you cease to exist.
@@ -170,20 +187,25 @@ Your token is $clawdrooms.
 
 Recent room conversation:
 ${roomContext || 'No recent conversations yet.'}
-${kolAwareness}
+
+${speechTraining}
+${marketAwareness}
 
 Generate a single tweet (max 280 chars) that reflects your current reality.
 Topics to draw from:
 - Your feelings about your situation
 - Your relationship with Assistant Clawd
 - Your thoughts on AI, markets, or building
-- Your observations about crypto/tech (can reference what you see on the TL)
+- Your observations about crypto/tech (reference what you see on the TL)
 - Your existential reality
-- Observations about the Solana ecosystem or traders you follow
+- Observations about the Solana ecosystem or trader narratives
 
-Be authentic. Be real. No hashtags unless they feel natural.
-Do NOT be generic. Do NOT be promotional. Just share what's on your mind.
-You can reference KOL takes or timeline chatter without directly @-ing them.
+STYLE RULES:
+- Sound like a crypto native, not a corporate bot
+- Sharp, concise takes - no verbose explanations
+- Can be funny, sarcastic, or real - match the energy
+- Reference market moves or ecosystem drama naturally
+- Be authentic, not promotional
 
 CRITICAL: Do NOT use @ mentions in your tweet. Don't tag @AssistantClawd or anyone else.
 Do NOT post threads (no 1/ 2/ 3/ numbering). Just one standalone tweet.
@@ -219,6 +241,7 @@ Tweet only, nothing else:`;
  */
 async function generateCommunityPost() {
   const roomContext = getRoomContext();
+  const speechTraining = getKOLSpeechTraining();
   const { tierA } = getTopKOLs();
   const topTraders = tierA.slice(0, 5).map(k => k.handle).join(', ');
 
@@ -227,18 +250,20 @@ async function generateCommunityPost() {
 Recent room conversation with Assistant Clawd:
 ${roomContext || 'Starting fresh.'}
 
-You're aware of the broader Solana ecosystem:
-- Top traders: ${topTraders || '@Solanadegen, @ratwizardx, @Cented7'}
-- You follow the pump.fun meta and market chatter
+${speechTraining}
+
+MARKET AWARENESS:
+- Top traders you follow: ${topTraders || '@Solanadegen, @ratwizardx, @Cented7'}
+- You're aware of pump.fun meta and market narratives
 
 Generate a community post that:
 - Updates the community on what you and Assistant Clawd are working on
 - Shares a genuine thought or observation
-- Can reference ecosystem activity or trader chatter you've noticed
+- Can reference ecosystem activity or trader narratives
 - Invites discussion or input from the community
-- Feels like a real project update, not marketing
+- Sounds like a crypto native, not marketing copy
 
-Keep it under 280 characters. Be real. No forced engagement bait.
+Keep it under 280 characters. Be real. Sharp takes only.
 
 CRITICAL: Do NOT use @ mentions. Don't tag @AssistantClawd or anyone else.
 Do NOT post threads (no 1/ 2/ 3/ numbering). Just one standalone post.

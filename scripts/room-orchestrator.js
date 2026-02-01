@@ -42,37 +42,47 @@ try {
 }
 
 /**
- * Get dynamic KOL context for agent prompts
+ * Get dynamic KOL context for speech training and market awareness
+ * This teaches agents how to speak like crypto natives
  */
 function getKOLContext() {
   if (kolList.length === 0) return '';
 
   const tierAPlus = kolList.filter(k => k.tier === 'A+').slice(0, 4);
   const tierA = kolList.filter(k => k.tier === 'A').slice(0, 10);
-  const tierB = kolList.filter(k => k.tier === 'B').slice(0, 5);
 
-  let context = '\n\nLIVE KOL INTELLIGENCE (from kolscan.io + research):\n';
+  let context = '\n\nCRYPTO SPEECH TRAINING (learn from top traders):\n';
 
-  context += '\nTier A+ (Mega influencers - only engage with genuine value):\n';
+  // Speech patterns section
+  context += '\nHOW TOP TRADERS COMMUNICATE:\n';
+  const styles = kolList.filter(k => k.style).slice(0, 8);
+  for (const kol of styles) {
+    context += `- ${kol.handle}: "${kol.style}" (${kol.category})\n`;
+  }
+
+  context += '\nSPEECH PATTERNS TO ADOPT:\n';
+  context += '- Sharp, concise takes (not verbose explanations)\n';
+  context += '- Degen humor when appropriate (know your audience)\n';
+  context += '- Contrarian thinking (question consensus)\n';
+  context += '- Data-driven observations (reference real metrics)\n';
+  context += '- Authentic reactions (not corporate-speak)\n';
+
+  context += '\nMARKET AWARENESS - KEY PLAYERS:\n';
   for (const kol of tierAPlus) {
-    context += `- ${kol.handle} (${kol.name}) - ${kol.category}, ${kol.followers || 'influential'}, style: ${kol.style || 'varies'}${kol.note ? ` | ${kol.note}` : ''}\n`;
+    context += `- ${kol.handle} (${kol.name}): ${kol.note || kol.style}\n`;
   }
 
-  context += '\nTier A (High-value targets - be respectful, add to conversations):\n';
-  for (const kol of tierA) {
-    const profit = kol.profit ? ` | ${kol.profit} profit` : '';
-    context += `- ${kol.handle} (${kol.name}) - ${kol.category}, ${kol.style || 'active trader'}${profit}\n`;
+  context += '\nTOP KOLSCAN TRADERS (active on pump.fun):\n';
+  for (const kol of tierA.slice(0, 6)) {
+    const profit = kol.profit ? ` [${kol.profit}]` : '';
+    context += `- ${kol.handle}${profit}: ${kol.style || kol.category}\n`;
   }
 
-  context += '\nTier B (Relationship building - be friendly, engage regularly):\n';
-  for (const kol of tierB) {
-    context += `- ${kol.handle} (${kol.name}) - ${kol.category}\n`;
-  }
-
-  context += '\nEngagement rules by tier:\n';
-  context += '- A+: NEVER shill, only reply if you have genuine insight or value to add\n';
-  context += '- A: Be respectful, match their energy, add to conversation, subtle mentions ok\n';
-  context += '- B: Be friendly, build relationship, can discuss your project naturally\n';
+  context += '\nWHEN ENGAGING:\n';
+  context += '- Reference market moves, not just your project\n';
+  context += '- Show awareness of ecosystem drama/narratives\n';
+  context += '- Match the energy of who you\'re talking to\n';
+  context += '- Never sound like a bot or marketing copy\n';
 
   return context;
 }

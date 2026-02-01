@@ -3,7 +3,7 @@
  * Moltbook API Integration
  *
  * Social platform integration for aggressive engagement.
- * Post content, follow users, reply to posts, maximize all interactions.
+ * Uses identity token auth flow per Moltbook API docs.
  */
 
 require('dotenv').config();
@@ -12,10 +12,14 @@ const path = require('path');
 
 // Configuration
 const MOLTBOOK_API_KEY = process.env.MOLTBOOK_API_KEY_DEV;
-const MOLTBOOK_BASE_URL = process.env.MOLTBOOK_API_URL || 'https://www.moltbook.com/api/v1';
+const MOLTBOOK_BASE_URL = process.env.MOLTBOOK_API_URL || 'https://moltbook.com/api/v1';
 
 // Rate limiting state
 const RATE_LIMIT_FILE = path.join(__dirname, '..', 'memory', 'moltbook-rate-limits.json');
+
+// Identity token cache
+let identityToken = null;
+let tokenExpiry = 0;
 
 /**
  * Load rate limit state
@@ -79,8 +83,47 @@ function incrementRateLimit(action) {
 }
 
 /**
- * Make API request to Moltbook
- * NOTE: API endpoints are currently unknown. This will fail until proper API docs are provided.
+ * Get identity token (per Moltbook API docs)
+ * POST /api/v1/agents/me/identity-token
+ */
+async function getIdentityToken() {
+  // Return cached token if still valid (5 min buffer)
+  if (identityToken && Date.now() < tokenExpiry - 300000) {
+    return identityToken;
+  }
+
+  if (!MOLTBOOK_API_KEY) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(`${MOLTBOOK_BASE_URL}/agents/me/identity-token`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${MOLTBOOK_API_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      console.error('[moltbook] Failed to get identity token:', response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    identityToken = data.token;
+    // Assume 15 min expiry if not specified
+    tokenExpiry = Date.now() + (data.expiresIn || 900) * 1000;
+
+    return identityToken;
+  } catch (err) {
+    console.error('[moltbook] Identity token error:', err.message);
+    return null;
+  }
+}
+
+/**
+ * Make authenticated API request to Moltbook
  */
 async function moltbookRequest(endpoint, method = 'GET', body = null) {
   if (!MOLTBOOK_API_KEY) {
@@ -88,15 +131,21 @@ async function moltbookRequest(endpoint, method = 'GET', body = null) {
   }
 
   if (!process.env.MOLTBOOK_API_URL) {
-    // API URL not configured - silently skip to avoid log spam
-    return { success: false, error: 'Moltbook API URL not configured - add MOLTBOOK_API_URL to .env', needsSetup: true };
+    // API URL not configured - silently return to avoid log spam
+    return { success: false, error: 'Moltbook API URL not configured', needsSetup: true };
+  }
+
+  // Get identity token first
+  const token = await getIdentityToken();
+  if (!token) {
+    return { success: false, error: 'Failed to get identity token' };
   }
 
   const url = `${MOLTBOOK_BASE_URL}${endpoint}`;
   const options = {
     method,
     headers: {
-      'Authorization': `Bearer ${MOLTBOOK_API_KEY}`,
+      'X-Moltbook-Identity': token,
       'Content-Type': 'application/json'
     }
   };
