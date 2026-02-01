@@ -80,10 +80,16 @@ function incrementRateLimit(action) {
 
 /**
  * Make API request to Moltbook
+ * NOTE: API endpoints are currently unknown. This will fail until proper API docs are provided.
  */
 async function moltbookRequest(endpoint, method = 'GET', body = null) {
   if (!MOLTBOOK_API_KEY) {
-    return { success: false, error: 'Moltbook API key not configured' };
+    return { success: false, error: 'Moltbook API key not configured', needsSetup: true };
+  }
+
+  if (!process.env.MOLTBOOK_API_URL) {
+    // API URL not configured - silently skip to avoid log spam
+    return { success: false, error: 'Moltbook API URL not configured - add MOLTBOOK_API_URL to .env', needsSetup: true };
   }
 
   const url = `${MOLTBOOK_BASE_URL}${endpoint}`;

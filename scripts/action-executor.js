@@ -669,10 +669,16 @@ async function executeMoltbookLike(content) {
 
 /**
  * Moltbook: Get feed
+ * NOTE: Moltbook API not yet configured - needs MOLTBOOK_API_URL in .env
  */
 async function getMoltbookFeed() {
   if (!moltbookApi) {
-    return { success: false, error: 'Moltbook API not available' };
+    return { success: false, error: 'Moltbook API not available', needsSetup: true };
+  }
+
+  // Don't spam logs if not configured
+  if (!process.env.MOLTBOOK_API_URL) {
+    return { success: false, error: 'Moltbook API URL not configured', needsSetup: true };
   }
 
   console.log('[action-executor] Fetching Moltbook feed...');
@@ -690,10 +696,16 @@ async function getMoltbookFeed() {
 
 /**
  * Moltbook: Get notifications
+ * NOTE: Moltbook API not yet configured - needs MOLTBOOK_API_URL in .env
  */
 async function getMoltbookNotifications() {
   if (!moltbookApi) {
-    return { success: false, error: 'Moltbook API not available' };
+    return { success: false, error: 'Moltbook API not available', needsSetup: true };
+  }
+
+  // Don't spam logs if not configured
+  if (!process.env.MOLTBOOK_API_URL) {
+    return { success: false, error: 'Moltbook API URL not configured', needsSetup: true };
   }
 
   console.log('[action-executor] Fetching Moltbook notifications...');
