@@ -517,6 +517,20 @@ async function main() {
       (async () => {
         await postMoltbookAnnouncement(contractAddress);
         return 'moltbook_announced';
+      })(),
+      // Restart website to pick up new TOKEN_MINT_ADDRESS
+      (async () => {
+        const { exec } = require('child_process');
+        return new Promise((resolve) => {
+          exec('pm2 restart website --update-env', (err) => {
+            if (err) {
+              console.error('[launch] Failed to restart website:', err.message);
+            } else {
+              console.log('[launch] Website restarted with new token address');
+            }
+            resolve('website_restarted');
+          });
+        });
       })()
     ]);
 

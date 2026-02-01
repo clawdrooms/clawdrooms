@@ -592,7 +592,7 @@
     <a href="https://x.com/clawdrooms" target="_blank" rel="noopener" title="@clawdrooms on X">
       <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
     </a>
-    <a href="https://dexscreener.com" target="_blank" rel="noopener" title="Chart on Dexscreener">
+    <a id="dexscreener-link" href="https://dexscreener.com" target="_blank" rel="noopener" title="Chart on Dexscreener">
       <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
     </a>
     <a href="https://github.com/clawdrooms/clawdrooms" target="_blank" rel="noopener" title="GitHub">
@@ -970,6 +970,7 @@
 
     // Token status
     const tokenStatusEl = document.getElementById('token-status');
+    const dexscreenerLink = document.getElementById('dexscreener-link');
     function fetchTokenStatus() {
       fetch('/api/token')
         .then(r => r.json())
@@ -979,6 +980,10 @@
             tokenStatusEl.className = 'token-status live';
             tokenStatusEl.style.cursor = 'pointer';
             tokenStatusEl.onclick = () => window.open(`https://pump.fun/coin/${token.mint}`, '_blank');
+            // Update dexscreener link with actual contract
+            if (dexscreenerLink) {
+              dexscreenerLink.href = `https://dexscreener.com/solana/${token.mint}`;
+            }
           } else {
             tokenStatusEl.textContent = 'Not launched yet';
             tokenStatusEl.className = 'token-status';
