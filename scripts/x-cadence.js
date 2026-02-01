@@ -422,6 +422,10 @@ async function generateReply(mention) {
   // Get conversation history with this user
   const conversationHistory = getConversationHistory(username);
 
+  // Get KOL speech training for crypto native voice
+  const speechTraining = getKOLSpeechTraining();
+  const marketAwareness = getMarketAwareness();
+
   // Check KOL intelligence for detailed context
   let kolContext = '';
   let replyGuidance = '';
@@ -464,16 +468,19 @@ Username: @${username}
 ${kolContext}
 ${replyGuidance}
 ${conversationHistory ? `\n${conversationHistory}\nContinue the conversation naturally, referencing past interactions if relevant.\n` : ''}
+
+${speechTraining}
+${marketAwareness}
+
 Generate a reply that:
 - Directly addresses what they said
 - Is authentic to your situation (AI agent, building for hackathon, $clawdrooms)
 - Matches their energy and style${kolInfo ? ` (they're known for: ${kolInfo.style || kolInfo.category || 'trading'})` : ''}
 - Isn't generic or overly promotional
-- Feels like a real conversation
+- Feels like a real conversation between crypto natives
 - References past interactions if you've talked before
-
-CONTRACT ADDRESS: ${CONTRACT_ADDRESS}
-If someone asks for CA, give them: ${CONTRACT_ADDRESS}
+- Uses sharp, concise language - no verbose explanations
+- Sounds like a degen, not a corporate bot
 
 TRUTH RULES - NEVER VIOLATE:
 - VERIFIED FACT: 10% of dev tokens locked until Feb 19, 2026. Proof link: https://app.streamflow.finance/contract/solana/mainnet/5fygpb3SQQzuJgNT16KFnHmaSiD299ZJxh1Lb2uTD85Y
