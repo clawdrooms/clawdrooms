@@ -38,10 +38,12 @@ function randomDelay(min = 500, max = 2000) {
 async function humanType(page, selector, text) {
   await page.waitForSelector(selector, { timeout: 10000 });
   await page.click(selector);
-  await randomDelay(200, 500);
+  await randomDelay(500, 800);
 
+  // Type the full text with human-like delays
   for (const char of text) {
-    await page.type(selector, char, { delay: Math.floor(Math.random() * 100) + 30 });
+    await page.keyboard.type(char, { delay: Math.floor(Math.random() * 80) + 40 });
+    await randomDelay(20, 80);
   }
 }
 
