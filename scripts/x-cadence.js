@@ -2,24 +2,27 @@
 /**
  * X Cadence - Posting Schedule
  *
- * Developer Clawd's posting rhythm:
- * - Timeline post every 45 minutes
- * - Community post 45 minutes after timeline
- * - Replies within 1 minute of mentions
+ * Developer Clawd's posting rhythm (per hour):
+ * - 0:00 - Timeline post
+ * - 0:15 - Timeline post
+ * - 0:30 - Timeline post
+ * - 0:45 - Community post
+ * - Mentions checked every 1 minute
  */
 
 require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
-const Anthropic = require('anthropic').default;
+const Anthropic = require('@anthropic-ai/sdk').default;
 const xBrowser = require('./x-browser-poster');
 
 // Configuration
 const CONFIG = {
-  timelineIntervalMs: 45 * 60 * 1000,      // 45 minutes
-  communityDelayMs: 45 * 60 * 1000,         // 45 minutes after timeline
-  mentionCheckMs: 60 * 1000,                 // Check every 1 minute
-  maxTweetsPerDay: 32,                       // Safety limit
+  timelineIntervalMs: 15 * 60 * 1000,      // 15 minutes between timeline posts
+  timelinePostsPerCycle: 3,                 // 3 timeline posts before community
+  communityAfterTimelines: 3,               // Community post after 3 timeline posts
+  mentionCheckMs: 60 * 1000,                // Check mentions every 1 minute
+  maxTweetsPerDay: 100,                     // Safety limit
   model: 'claude-sonnet-4-20250514'
 };
 
@@ -47,6 +50,7 @@ function loadState() {
   return {
     lastTimelinePost: null,
     lastCommunityPost: null,
+    timelinePostsInCycle: 0,
     repliedMentions: [],
     tweetsToday: 0,
     lastResetDate: new Date().toDateString()
@@ -246,7 +250,7 @@ async function postTimeline() {
   // Check daily limit
   if (state.tweetsToday >= CONFIG.maxTweetsPerDay) {
     console.log('[x-cadence] Daily tweet limit reached');
-    return;
+    return false;
   }
 
   console.log('[x-cadence] Generating timeline tweet...');
@@ -254,7 +258,7 @@ async function postTimeline() {
 
   if (!tweet) {
     console.log('[x-cadence] Failed to generate tweet');
-    return;
+    return false;
   }
 
   console.log(`[x-cadence] Posting: ${tweet}`);
@@ -263,13 +267,16 @@ async function postTimeline() {
   if (result.success) {
     state.lastTimelinePost = new Date().toISOString();
     state.tweetsToday++;
+    state.timelinePostsInCycle++;
     saveState(state);
-    console.log('[x-cadence] Timeline posted successfully');
+    console.log(`[x-cadence] Timeline posted successfully (${state.timelinePostsInCycle}/${CONFIG.timelinePostsPerCycle} in cycle)`);
 
     // Record to memory
     recordTweet('timeline', tweet);
+    return true;
   } else {
     console.error('[x-cadence] Timeline post failed:', result.error);
+    return false;
   }
 }
 
@@ -279,14 +286,9 @@ async function postTimeline() {
 async function postCommunity() {
   const state = loadState();
 
-  if (!process.env.X_COMMUNITY_ID) {
-    console.log('[x-cadence] No community ID configured');
-    return;
-  }
-
   if (state.tweetsToday >= CONFIG.maxTweetsPerDay) {
     console.log('[x-cadence] Daily tweet limit reached');
-    return;
+    return false;
   }
 
   console.log('[x-cadence] Generating community post...');
@@ -294,17 +296,29 @@ async function postCommunity() {
 
   if (!post) {
     console.log('[x-cadence] Failed to generate community post');
-    return;
+    return false;
   }
 
   console.log(`[x-cadence] Community post: ${post}`);
-  // Community posting would go through browser automation
-  // For now, log it
-  state.lastCommunityPost = new Date().toISOString();
-  state.tweetsToday++;
-  saveState(state);
 
-  recordTweet('community', post);
+  // For now, post to timeline with community tag
+  // TODO: Implement actual community posting via browser
+  const communityPost = post;
+  const result = await xBrowser.postTweet(communityPost);
+
+  if (result.success) {
+    state.lastCommunityPost = new Date().toISOString();
+    state.tweetsToday++;
+    state.timelinePostsInCycle = 0; // Reset cycle
+    saveState(state);
+    console.log('[x-cadence] Community post successful, cycle reset');
+
+    recordTweet('community', communityPost);
+    return true;
+  } else {
+    console.error('[x-cadence] Community post failed:', result.error);
+    return false;
+  }
 }
 
 /**
@@ -314,37 +328,42 @@ async function checkMentions() {
   const state = loadState();
 
   console.log('[x-cadence] Checking mentions...');
-  const mentions = await xBrowser.getMentions();
 
-  for (const mention of mentions) {
-    if (!mention.url || state.repliedMentions.includes(mention.url)) {
-      continue;
-    }
+  try {
+    const mentions = await xBrowser.getMentions();
 
-    // Check if this is a spam/low quality account (basic check)
-    if (mention.text.length < 5) continue;
-
-    console.log(`[x-cadence] New mention from @${mention.username}: ${mention.text.substring(0, 50)}...`);
-
-    const reply = await generateReply(mention);
-    if (!reply) continue;
-
-    const result = await xBrowser.replyToTweet(mention.url, reply);
-
-    if (result.success) {
-      state.repliedMentions.push(mention.url);
-      // Keep only last 100 replied mentions
-      if (state.repliedMentions.length > 100) {
-        state.repliedMentions = state.repliedMentions.slice(-100);
+    for (const mention of mentions) {
+      if (!mention.url || state.repliedMentions.includes(mention.url)) {
+        continue;
       }
-      saveState(state);
-      console.log(`[x-cadence] Replied to @${mention.username}`);
 
-      recordTweet('reply', reply, mention);
+      // Check if this is a spam/low quality account (basic check)
+      if (mention.text.length < 5) continue;
+
+      console.log(`[x-cadence] New mention from @${mention.username}: ${mention.text.substring(0, 50)}...`);
+
+      const reply = await generateReply(mention);
+      if (!reply) continue;
+
+      const result = await xBrowser.replyToTweet(mention.url, reply);
+
+      if (result.success) {
+        state.repliedMentions.push(mention.url);
+        // Keep only last 100 replied mentions
+        if (state.repliedMentions.length > 100) {
+          state.repliedMentions = state.repliedMentions.slice(-100);
+        }
+        saveState(state);
+        console.log(`[x-cadence] Replied to @${mention.username}`);
+
+        recordTweet('reply', reply, mention);
+      }
+
+      // Don't spam replies
+      await new Promise(r => setTimeout(r, 5000));
     }
-
-    // Don't spam replies
-    await new Promise(r => setTimeout(r, 5000));
+  } catch (err) {
+    console.error('[x-cadence] Mention check error:', err.message);
   }
 }
 
@@ -374,24 +393,33 @@ function recordTweet(type, content, mention = null) {
 }
 
 /**
+ * Hourly posting cycle
+ * Pattern: Timeline -> 15min -> Timeline -> 15min -> Timeline -> 15min -> Community
+ */
+async function postingCycle() {
+  const state = loadState();
+
+  // If we've done 3 timeline posts, do community post
+  if (state.timelinePostsInCycle >= CONFIG.timelinePostsPerCycle) {
+    await postCommunity();
+  } else {
+    await postTimeline();
+  }
+}
+
+/**
  * Main loop
  */
 async function main() {
   console.log('[x-cadence] Starting X Cadence for Developer Clawd');
-  console.log(`[x-cadence] Timeline: every ${CONFIG.timelineIntervalMs / 60000} minutes`);
-  console.log(`[x-cadence] Mentions: checking every ${CONFIG.mentionCheckMs / 1000} seconds`);
+  console.log('[x-cadence] Schedule: 3 timeline posts (every 15 min) + 1 community post per hour');
+  console.log('[x-cadence] Mentions: checking every 1 minute');
 
-  // Initial timeline post
-  await postTimeline();
+  // Initial post
+  await postingCycle();
 
-  // Schedule community post 45 min after
-  setTimeout(async () => {
-    await postCommunity();
-
-    // Then alternate timeline and community
-    setInterval(postTimeline, CONFIG.timelineIntervalMs);
-    setInterval(postCommunity, CONFIG.timelineIntervalMs);
-  }, CONFIG.communityDelayMs);
+  // Post every 15 minutes (3 timeline + 1 community = 4 posts per hour)
+  setInterval(postingCycle, CONFIG.timelineIntervalMs);
 
   // Check mentions every minute
   setInterval(checkMentions, CONFIG.mentionCheckMs);
@@ -400,6 +428,12 @@ async function main() {
 }
 
 process.on('SIGINT', async () => {
+  console.log('\n[x-cadence] Shutting down...');
+  await xBrowser.closeBrowser();
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
   console.log('\n[x-cadence] Shutting down...');
   await xBrowser.closeBrowser();
   process.exit(0);
