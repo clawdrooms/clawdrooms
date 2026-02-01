@@ -12,7 +12,7 @@
  * [ACTION:SEND_EMAIL]{"to":"...","subject":"...","body":"..."}[/ACTION]
  * [ACTION:LAUNCH_TOKEN][/ACTION] - Launch token on pump.fun
  * [ACTION:BUY_TOKEN]{"amount": 0.1}[/ACTION] - Buy tokens with SOL
- * [ACTION:SELL_TOKEN]{"amount": 1000}[/ACTION] - Sell tokens for SOL
+ * [ACTION:SELL_TOKEN] - DISABLED (dev wallet never sells)
  * [ACTION:BURN_TOKEN]{"amount": 1000}[/ACTION] - Burn tokens permanently
  * [ACTION:LOCK_TOKEN]{"amount": 1000}[/ACTION] - Lock tokens (send to dead address)
  */
@@ -449,25 +449,15 @@ async function buyToken(content) {
 
 /**
  * Sell tokens for SOL
+ * HARD BLOCKED: Dev wallet NEVER sells. This is a core trust rule.
  */
 async function sellToken(content) {
-  console.log('[action-executor] Selling tokens...');
-
-  try {
-    const data = typeof content === 'string' ? JSON.parse(content) : content;
-    const amount = data.amount || data.amountTokens || 0;
-
-    if (amount <= 0) {
-      return { success: false, error: 'Invalid amount' };
-    }
-
-    const tokenActions = require('./token-actions');
-    const result = await tokenActions.sellTokens(amount);
-
-    return result;
-  } catch (err) {
-    return { success: false, error: err.message };
-  }
+  console.log('[action-executor] BLOCKED: Sell action rejected - dev wallet never sells');
+  return {
+    success: false,
+    error: 'BLOCKED: Dev wallet NEVER sells. This is a hard rule.',
+    blocked: true
+  };
 }
 
 /**

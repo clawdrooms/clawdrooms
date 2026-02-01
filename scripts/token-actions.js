@@ -206,70 +206,20 @@ async function buyTokens(amountSOL) {
 
 /**
  * Sell tokens via pump.fun
+ *
+ * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ * HARD BLOCKED: DEV WALLET NEVER SELLS
+ * This function is disabled. The dev wallet will NEVER sell tokens.
+ * This is a core trust rule for the clawdrooms project.
+ * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  */
 async function sellTokens(amountTokens) {
-  if (!CONTRACT_ADDRESS) {
-    throw new Error('TOKEN_MINT_ADDRESS not configured');
-  }
-
-  const connection = getConnection();
-  const keypair = getKeypair();
-
-  console.log(`[sell] Selling ${amountTokens} tokens...`);
-
-  try {
-    const response = await fetch('https://pumpportal.fun/api/trade-local', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        publicKey: keypair.publicKey.toString(),
-        action: 'sell',
-        mint: CONTRACT_ADDRESS,
-        denominatedInSol: 'false',
-        amount: amountTokens,
-        slippage: 15,
-        priorityFee: 0.0005,
-        pool: 'pump',
-      }),
-    });
-
-    if (response.status !== 200) {
-      const error = await response.text();
-      throw new Error(`Pump.fun API error: ${error}`);
-    }
-
-    const data = await response.arrayBuffer();
-    const tx = VersionedTransaction.deserialize(new Uint8Array(data));
-    tx.sign([keypair]);
-
-    const signature = await connection.sendTransaction(tx, {
-      skipPreflight: false,
-      maxRetries: 3,
-    });
-
-    console.log(`[sell] Transaction sent: ${signature}`);
-
-    const confirmation = await connection.confirmTransaction(signature, 'confirmed');
-
-    if (confirmation.value.err) {
-      throw new Error(`Transaction failed: ${JSON.stringify(confirmation.value.err)}`);
-    }
-
-    console.log('[sell] Transaction confirmed!');
-
-    const proofFile = saveProof('sell', {
-      amountTokens,
-      signature,
-      mint: CONTRACT_ADDRESS,
-      wallet: keypair.publicKey.toString(),
-      solscan: `https://solscan.io/tx/${signature}`
-    });
-
-    return { success: true, signature, proofFile };
-  } catch (err) {
-    console.error('[sell] Error:', err.message);
-    return { success: false, error: err.message };
-  }
+  console.log('[sell] BLOCKED: Dev wallet NEVER sells. This is a hard rule.');
+  return {
+    success: false,
+    error: 'BLOCKED: Dev wallet NEVER sells. This is a hard rule.',
+    blocked: true
+  };
 }
 
 /**
@@ -474,9 +424,11 @@ if (require.main === module) {
           console.log('Commands:');
           console.log('  balance             - Check wallet and token balance');
           console.log('  buy <sol>           - Buy tokens with SOL via pump.fun');
-          console.log('  sell <tokens>       - Sell tokens for SOL via pump.fun');
+          console.log('  sell                - DISABLED (dev wallet NEVER sells)');
           console.log('  burn <tokens>       - Permanently burn tokens');
           console.log('  lock <tokens>       - Send tokens to dead address (lock)');
+          console.log('');
+          console.log('HARD RULE: Dev wallet NEVER sells. Trust is everything.');
           console.log('');
           console.log('Examples:');
           console.log('  node token-actions.js balance');
