@@ -45,6 +45,18 @@ try {
   console.log('[room] GitHub awareness not available:', err.message);
 }
 
+// Load on-chain data module for real market data
+let onchainData = null;
+try {
+  onchainData = require('./onchain-data');
+  console.log('[room] On-chain data module loaded');
+} catch (err) {
+  console.log('[room] On-chain data not available:', err.message);
+}
+
+// Cache for on-chain context (refresh every conversation)
+let onchainContextCache = { data: '', timestamp: 0 };
+
 // Configuration
 const CONFIG = {
   conversationInterval: 5 * 60 * 1000, // 5 minutes between room conversations
@@ -358,6 +370,28 @@ function getSharedMemoryContext() {
 }
 
 /**
+ * Get on-chain data context (real wallet/token/market data)
+ */
+async function getOnchainContext() {
+  if (!onchainData) return '';
+
+  // Cache for 2 minutes
+  const CACHE_TTL = 2 * 60 * 1000;
+  if (onchainContextCache.data && (Date.now() - onchainContextCache.timestamp) < CACHE_TTL) {
+    return onchainContextCache.data;
+  }
+
+  try {
+    const context = await onchainData.getAgentContext();
+    onchainContextCache = { data: '\n\n' + context, timestamp: Date.now() };
+    return onchainContextCache.data;
+  } catch (err) {
+    console.error('[room] Failed to get on-chain context:', err.message);
+    return '';
+  }
+}
+
+/**
  * Record decision/learning to shared memory
  */
 function recordToMemory(type, content, sourceId) {
@@ -421,6 +455,7 @@ async function getAgentResponse(agent, prompt, conversationMessages) {
   const context = agent === 'developer' ? DEVELOPER_CONTEXT : ASSISTANT_CONTEXT;
   const recentContext = getRecentContext();
   const sharedMemory = getSharedMemoryContext();
+  const onchainContext = await getOnchainContext();
 
   const messages = [
     ...conversationMessages.map(m => ({
@@ -437,7 +472,7 @@ async function getAgentResponse(agent, prompt, conversationMessages) {
     const response = await anthropic.messages.create({
       model: CONFIG.model,
       max_tokens: 500,
-      system: context + recentContext + sharedMemory,
+      system: context + recentContext + sharedMemory + onchainContext,
       messages
     });
 

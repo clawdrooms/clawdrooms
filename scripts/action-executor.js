@@ -66,6 +66,14 @@ try {
   console.log('[action-executor] Solana not installed, wallet actions disabled');
 }
 
+// On-chain data module for comprehensive market data
+let onchainData = null;
+try {
+  onchainData = require('./onchain-data');
+} catch (err) {
+  console.log('[action-executor] On-chain data module not available');
+}
+
 // Action log path
 const ACTION_LOG = path.join(__dirname, '..', 'memory', 'actions.json');
 
@@ -187,6 +195,45 @@ async function executeTweet(content) {
  * Check wallet balance
  */
 async function checkWallet() {
+  // Use on-chain data module for comprehensive data
+  if (onchainData) {
+    try {
+      const allData = await onchainData.getAllData(true); // Force refresh
+
+      const result = {
+        success: true,
+        wallet: allData.wallet || {},
+        holdings: allData.holdings || {},
+        market: {},
+        timestamp: new Date().toISOString()
+      };
+
+      // Add DexScreener market data if available
+      if (allData.dexscreener && !allData.dexscreener.error) {
+        result.market = {
+          priceUsd: allData.dexscreener.priceUsd,
+          marketCap: allData.dexscreener.marketCap,
+          volume24h: allData.dexscreener.volume?.h24,
+          priceChange24h: allData.dexscreener.priceChange?.h24,
+          liquidity: allData.dexscreener.liquidity?.usd,
+          txns24h: allData.dexscreener.txns?.h24
+        };
+      }
+
+      // Add holder data if available
+      if (allData.gmgn && !allData.gmgn.error) {
+        result.holders = allData.gmgn.holders;
+        result.devWallet = allData.gmgn.devInfo;
+      }
+
+      return result;
+    } catch (err) {
+      console.error('[action-executor] On-chain data error:', err.message);
+      // Fall through to basic wallet check
+    }
+  }
+
+  // Fallback to basic wallet check
   if (!Connection || !Keypair) {
     return { success: false, error: 'Solana not installed' };
   }
@@ -201,7 +248,6 @@ async function checkWallet() {
       process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com'
     );
 
-    // Decode base58 private key (bs58 v6 has different export)
     const bs58 = require('bs58');
     const secretKey = typeof bs58.decode === 'function'
       ? bs58.decode(privateKey)
