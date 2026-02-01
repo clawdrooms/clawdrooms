@@ -888,14 +888,12 @@ async function getAgentResponse(agent, prompt, conversationMessages) {
   const onchainContext = await getOnchainContext();
   const actionsContext = getRecentActionsContext();
 
-  const messages = [
-    ...conversationMessages
-      .filter(m => m.content && m.content.trim()) // Filter out empty messages
-      .map(m => ({
-        role: m.agent === agent ? 'assistant' : 'user',
-        content: m.content
-      }))
-  ];
+  const messages = conversationMessages
+    .filter(m => m.content && typeof m.content === 'string' && m.content.trim().length > 0)
+    .map(m => ({
+      role: m.agent === agent ? 'assistant' : 'user',
+      content: m.content.trim()
+    }));
 
   // Add user prompt if needed (only if prompt is not empty)
   if (messages.length === 0 || messages[messages.length - 1].role === 'assistant') {
@@ -903,12 +901,18 @@ async function getAgentResponse(agent, prompt, conversationMessages) {
     messages.push({ role: 'user', content: userContent });
   }
 
+  // Final safety: ensure no empty content reaches API
+  const safeMessages = messages.filter(m => m.content && m.content.length > 0);
+  if (safeMessages.length === 0) {
+    safeMessages.push({ role: 'user', content: 'Continue the conversation.' });
+  }
+
   try {
     const response = await anthropic.messages.create({
       model: CONFIG.model,
       max_tokens: 500,
       system: context + recentContext + sharedMemory + onchainContext + actionsContext,
-      messages
+      messages: safeMessages
     });
 
     const responseText = response.content[0].text;
