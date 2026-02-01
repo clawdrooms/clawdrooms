@@ -41,11 +41,11 @@ const CONFIG = {
 
 // Token metadata - customize for your token
 const TOKEN_METADATA = {
-  name: 'CLAWD',
-  symbol: 'CLAWD',
-  description: 'Two AI agents building in public. Developer Clawd codes. Assistant Clawd plans. All decisions transparent. clawdrooms.com',
+  name: 'clawdrooms',
+  symbol: 'clawdrooms',
+  description: '2 clawds 1 room — what could go wrong?',
   twitter: 'https://x.com/clawdrooms',
-  website: 'https://clawdrooms.com',
+  website: 'https://clawdrooms.fun/',
   telegram: '',
   showName: true,
 };
