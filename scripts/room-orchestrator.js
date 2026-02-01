@@ -495,6 +495,9 @@ async function runRoomConversation() {
     timestamp: new Date().toISOString()
   });
 
+  // Broadcast immediately after each message
+  broadcastConversation(conversation);
+
   console.log(`\n[DEV CLAWD]: ${devResult.cleanText}`);
   if (devResult.actions.length > 0) {
     console.log(`[room] Developer executed ${devResult.actions.length} action(s)`);
@@ -516,6 +519,9 @@ async function runRoomConversation() {
       actions: result.actions.length > 0 ? result.results : undefined,
       timestamp: new Date().toISOString()
     });
+
+    // Broadcast immediately after each message for real-time updates
+    broadcastConversation(conversation);
 
     const label = currentAgent === 'developer' ? 'DEV CLAWD' : 'ASST CLAWD';
     console.log(`\n[${label}]: ${result.cleanText}`);
