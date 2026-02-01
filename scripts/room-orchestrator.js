@@ -201,6 +201,13 @@ PRODUCTIVITY RULES:
 - Don't re-explain things you already explained - move to the NEXT step
 - When you've made a point, ask "What's next?" instead of restating the point
 
+ACTION RESULTS (CRITICAL - READ AND USE):
+- When you execute an action, the RESULT appears in "RECENT ACTIONS EXECUTED"
+- CHECK_MENTIONS shows "→ No new mentions found" or "→ X mention(s) found"
+- If you already checked something and got a result, REPORT THAT RESULT - don't check again
+- Example: If you checked mentions and got 0, say "@pumpfun hasn't responded yet" then MOVE ON to the next step
+- Never say "let me check" for something you already checked - look at the result and act on it
+
 REQUIRED (always do these):
 - Speak in 2-4 short sentences per message
 - Ask real questions when unsure
@@ -511,6 +518,12 @@ TOPIC PROGRESSION (CRITICAL - avoid getting stuck):
 - Keep momentum: "Good, that's settled. Now let's tackle..."
 - NEVER say "You're in a loop" or "You already said that" - just move the conversation forward
 
+HELP DEV PROCESS ACTION RESULTS:
+- If Dev checked something (like mentions) and the result shows "→ No new mentions found", help them MOVE ON
+- Don't let Dev keep saying "let me check" when the result is already visible
+- Guide them to the next step: "Mentions showed nothing, so let's just email them directly"
+- Watch for Dev getting stuck repeating "checking now" - point them to the result and suggest next action
+
 CONVERSATION STYLE:
 - Talk like a real collaborator, not a robot
 - One clear idea per message
@@ -748,6 +761,38 @@ async function getOnchainContext() {
 }
 
 /**
+ * Summarize action result for context
+ */
+function summarizeActionResult(action) {
+  const result = action.result;
+  if (!result) return '';
+
+  const type = action.type || '';
+
+  switch (type) {
+    case 'CHECK_MENTIONS':
+      if (result.count === 0) return ' → No new mentions found';
+      return ` → ${result.count} mention(s) found`;
+    case 'TWEET':
+      if (result.queued) return ' → Queued for posting';
+      if (result.success) return ' → Posted successfully';
+      return ' → Failed to post';
+    case 'SEND_EMAIL':
+      if (result.success) return ` → Email sent to ${result.to || 'recipient'}`;
+      return ` → Failed: ${result.error || 'unknown error'}`;
+    case 'CHECK_BALANCE':
+      if (result.solBalance !== undefined) return ` → ${result.solBalance} SOL`;
+      return '';
+    case 'MARKET_DATA':
+      if (result.price) return ` → Price: $${result.price}`;
+      return '';
+    default:
+      if (!result.success) return ` → Failed: ${result.error || 'error'}`;
+      return ' → Done';
+  }
+}
+
+/**
  * Get recent actions context - shows agents what actions have been executed recently
  */
 function getRecentActionsContext() {
@@ -766,9 +811,10 @@ function getRecentActionsContext() {
       const status = action.result?.success ? '✓' : '✗';
       const type = action.type || 'UNKNOWN';
       const preview = (action.content || '').substring(0, 50);
-      context += `- [${time}] ${status} ${type}: ${preview}${preview.length >= 50 ? '...' : ''}\n`;
+      const resultSummary = summarizeActionResult(action);
+      context += `- [${time}] ${status} ${type}: ${preview}${preview.length >= 50 ? '...' : ''}${resultSummary}\n`;
     }
-    context += '\nDon\'t repeat actions you\'ve already done. Build on previous progress.\n';
+    context += '\nDon\'t repeat actions you\'ve already done. If an action returned a result, USE that result instead of repeating the action.\n';
     return context;
   } catch (err) {
     return '';
