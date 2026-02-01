@@ -35,6 +35,7 @@
     "puppeteer": "^23.11.1",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "twitter-api-v2": "^1.29.0",
     "ws": "^8.18.0"
   }
 }

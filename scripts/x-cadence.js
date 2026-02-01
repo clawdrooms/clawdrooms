@@ -15,6 +15,7 @@ const fs = require('fs');
 const path = require('path');
 const Anthropic = require('@anthropic-ai/sdk').default;
 const xBrowser = require('./x-browser-poster');
+const xApi = require('./x-api-client'); // X API for mentions (more reliable)
 
 // Load token config for contract address
 const TOKEN_CONFIG_PATH = path.join(__dirname, '..', 'website', 'token-config.json');
@@ -607,58 +608,62 @@ async function postCommunity() {
 }
 
 /**
- * Check and reply to mentions
+ * Check and reply to mentions - USES X API (not browser)
+ * Browser is only used for timeline/community posts
  */
 async function checkMentions() {
-  const state = loadState();
-
-  console.log('[x-cadence] Checking mentions...');
+  console.log('[x-cadence] Checking mentions via X API...');
 
   // Fetch fresh market data for replies
   await fetchMarketData();
 
   try {
-    const mentions = await xBrowser.getMentions();
+    // Use X API for mentions (more reliable than browser scraping)
+    const mentions = await xApi.getMentions();
+
+    if (mentions.length === 0) {
+      return;
+    }
+
+    console.log(`[x-cadence] Processing ${mentions.length} mentions...`);
 
     for (const mention of mentions) {
-      if (!mention.url || state.repliedMentions.includes(mention.url)) {
+      // Skip very short mentions
+      if (mention.text.length < 10) {
+        console.log(`[x-cadence] Skipping short mention from @${mention.username}`);
+        xApi.markProcessed(mention.id);
         continue;
       }
 
-      // Check if this is a spam/low quality account (basic check)
-      if (mention.text.length < 5) continue;
+      // Log user quality info
+      if (mention.userMetrics) {
+        const m = mention.userMetrics;
+        console.log(`[x-cadence] @${mention.username}: ${m.followers_count} followers, ${m.tweet_count} tweets${mention.verified ? ' [VERIFIED]' : ''}`);
+      }
 
       console.log(`[x-cadence] New mention from @${mention.username}: ${mention.text.substring(0, 50)}...`);
-      console.log(`[x-cadence] Mention URL: ${mention.url}`);
 
       const reply = await generateReply(mention);
       if (!reply) {
         console.log('[x-cadence] Failed to generate reply, skipping');
+        xApi.markProcessed(mention.id);
         continue;
       }
 
       console.log(`[x-cadence] Generated reply: ${reply.substring(0, 50)}...`);
-      const result = await xBrowser.replyToTweet(mention.url, reply);
+
+      // Use X API to reply (not browser)
+      const result = await xApi.replyToTweet(mention.id, reply);
 
       if (result.success) {
-        state.repliedMentions.push(mention.url);
-        // Keep only last 100 replied mentions
-        if (state.repliedMentions.length > 100) {
-          state.repliedMentions = state.repliedMentions.slice(-100);
-        }
-        saveState(state);
-        console.log(`[x-cadence] Replied to @${mention.username}`);
-
+        console.log(`[x-cadence] Replied to @${mention.username} via API`);
         recordTweet('reply', reply, mention);
       } else {
         console.error(`[x-cadence] Failed to reply to @${mention.username}: ${result.error}`);
-        // Still track failed attempts to avoid retrying forever
-        state.repliedMentions.push(mention.url);
-        saveState(state);
       }
 
-      // Don't spam replies
-      await new Promise(r => setTimeout(r, 5000));
+      // Rate limit protection - wait between replies
+      await new Promise(r => setTimeout(r, 3000));
     }
   } catch (err) {
     console.error('[x-cadence] Mention check error:', err.message);
@@ -926,8 +931,19 @@ async function postingTick() {
 async function main() {
   console.log('[x-cadence] Starting X Cadence for Developer Clawd');
   console.log('[x-cadence] Schedule: 3 timeline posts (every 15 min) + 1 community post per hour');
-  console.log('[x-cadence] Mentions: checking every 1 minute');
+  console.log('[x-cadence] Mentions: checking every 1 minute via X API');
+  console.log('[x-cadence] Community/Timeline: using browser automation');
   console.log('[x-cadence] Using robust polling (checks every 30s, posts when 15+ min elapsed)');
+
+  // Test X API connection
+  console.log('[x-cadence] Testing X API connection...');
+  const apiTest = await xApi.testConnection();
+  if (apiTest.success) {
+    console.log(`[x-cadence] X API connected as @${apiTest.user.username}`);
+  } else {
+    console.error('[x-cadence] X API connection failed:', apiTest.error);
+    console.log('[x-cadence] Mentions will be skipped until API is fixed');
+  }
 
   // Check immediately if we should post
   const { shouldPostNow, elapsed } = shouldPost();
