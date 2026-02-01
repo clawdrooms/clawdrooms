@@ -3,27 +3,63 @@
     "data": {
       "wallet": {
         "address": "2EU98xTjnjrQgf33eG63p7uSbMFgkHLT35bKCrKzFqQ4",
-        "balanceLamports": 5850165201,
-        "balanceSOL": 5.850165201,
-        "timestamp": "2026-02-01T07:48:32.139Z"
+        "balanceLamports": 1108621968,
+        "balanceSOL": 1.108621968,
+        "timestamp": "2026-02-01T23:55:46.418Z"
       },
       "holdings": {
-        "nativeBalance": 5.850165201,
-        "tokenCount": 0,
-        "ourToken": null,
-        "timestamp": "2026-02-01T07:48:32.222Z"
+        "nativeBalance": 1.108621968,
+        "tokenCount": 1,
+        "ourToken": {
+          "mint": "HK4ot7dtuyPYVZS2cX1zKmwpeHnGVHLAvBzagGLJheYw",
+          "amount": 10265412373408,
+          "decimals": 6,
+          "displayAmount": 10265412.373408
+        },
+        "timestamp": "2026-02-01T23:55:46.919Z"
       },
       "dexscreener": {
-        "error": "Token mint address not configured"
+        "pair": "FBibdB8rM9eVrYv8AMvpdu1jwjfU6ShsiAQirPsN7663",
+        "dex": "pumpswap",
+        "baseToken": {
+          "name": "clawdrooms",
+          "symbol": "clawdrooms"
+        },
+        "priceUsd": 0.00001667,
+        "priceNative": 1.642e-7,
+        "volume": {
+          "h1": 2877.89,
+          "h6": 13500.81,
+          "h24": 169229.99
+        },
+        "priceChange": {
+          "h1": -3.18,
+          "h6": -28.54,
+          "h24": -62.41
+        },
+        "liquidity": {
+          "usd": 10977.43,
+          "base": 327621358,
+          "quote": 54.3605
+        },
+        "fdv": 16077,
+        "marketCap": 16077,
+        "txns": {
+          "h1": {
+            "buys": 24,
+            "sells": 20
+          },
+          "h24": {
+            "buys": 2072,
+            "sells": 1573
+          }
+        },
+        "timestamp": "2026-02-01T23:55:46.352Z"
       },
-      "gmgn": {
-        "error": "Token mint address not configured"
-      },
-      "trending": {
-        "error": "HTTP 403"
-      },
-      "fetchedAt": "2026-02-01T07:48:32.222Z"
+      "gmgn": null,
+      "trending": null,
+      "fetchedAt": "2026-02-01T23:55:46.919Z"
     },
-    "timestamp": 1769932112222
+    "timestamp": 1769990146919
   }
 }
