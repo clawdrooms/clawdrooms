@@ -437,32 +437,36 @@ async function replyToTweet(tweetUrl, text) {
       throw new Error('Tweet is unavailable or deleted');
     }
 
-    // Click reply button
-    await page.waitForSelector('[data-testid="reply"]', { timeout: 15000 });
-    await page.click('[data-testid="reply"]');
-    await randomDelay(1000, 2000);
+    // Try to find and use the inline reply box first (visible on tweet page)
+    const inlineReplyBox = await page.$('[data-testid="tweetTextarea_0"]');
+    if (inlineReplyBox) {
+      console.log('[x-browser] Using inline reply box');
+      // Inline reply box exists, just click and type
+      await page.click('[data-testid="tweetTextarea_0"]');
+      await randomDelay(500, 1000);
+    } else {
+      // Click reply button to open modal
+      console.log('[x-browser] No inline reply box, clicking reply button');
+      await page.waitForSelector('[data-testid="reply"]', { timeout: 15000 });
+      await page.click('[data-testid="reply"]');
+      await randomDelay(1500, 2500);
 
-    // Take screenshot after clicking reply
-    try {
-      await page.screenshot({ path: path.join(DATA_DIR, `x-reply-clicked-${Date.now()}.png`) });
-    } catch (e) {}
-
-    // Type reply - try multiple selectors for the textarea
-    let textareaSelector = '[data-testid="tweetTextarea_0"]';
-    try {
-      await page.waitForSelector(textareaSelector, { timeout: 10000 });
-    } catch (e) {
-      // Try alternative selector for reply modal
-      console.log('[x-browser] Primary textarea not found, trying alternatives...');
-      textareaSelector = '[data-testid="tweetTextarea_0_label"]';
+      // Take screenshot after clicking reply
       try {
-        await page.waitForSelector(textareaSelector, { timeout: 5000 });
-      } catch (e2) {
-        // Take screenshot of current state
-        await page.screenshot({ path: path.join(DATA_DIR, `x-reply-no-textarea-${Date.now()}.png`) });
-        throw new Error('Could not find reply textarea');
-      }
+        await page.screenshot({ path: path.join(DATA_DIR, `x-reply-clicked-${Date.now()}.png`) });
+      } catch (e) {}
     }
+
+    // Wait for textarea
+    try {
+      await page.waitForSelector('[data-testid="tweetTextarea_0"]', { timeout: 10000 });
+    } catch (e) {
+      // Take screenshot of current state
+      console.log('[x-browser] Textarea not found, taking screenshot...');
+      await page.screenshot({ path: path.join(DATA_DIR, `x-reply-no-textarea-${Date.now()}.png`) });
+      throw new Error('Could not find reply textarea');
+    }
+
     await page.waitForSelector('[data-testid="tweetTextarea_0"]', { timeout: 15000 });
     await humanType(page, '[data-testid="tweetTextarea_0"]', text);
     await randomDelay(1000, 2000);
