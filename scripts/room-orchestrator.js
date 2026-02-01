@@ -24,16 +24,57 @@ try {
   console.log('[room] Contextual intelligence not available:', err.message);
 }
 
-// Load KOL research for strategic context
-let kolResearch = null;
+// Load KOL intelligence for strategic context (same file as x-cadence uses)
+let kolIntelligence = {};
+let kolList = [];
 try {
-  const kolPath = path.join(__dirname, '..', 'memory', 'kol-research.json');
+  const kolPath = path.join(__dirname, '..', 'data', 'kol-intelligence.json');
   if (fs.existsSync(kolPath)) {
-    kolResearch = JSON.parse(fs.readFileSync(kolPath, 'utf8'));
-    console.log(`[room] KOL research loaded: ${kolResearch.totalKols} KOLs`);
+    kolIntelligence = JSON.parse(fs.readFileSync(kolPath, 'utf8'));
+    // Build list of KOLs for context (exclude metadata fields)
+    kolList = Object.entries(kolIntelligence)
+      .filter(([key, val]) => typeof val === 'object' && val.handle)
+      .map(([key, val]) => ({ username: key, ...val }));
+    console.log(`[room] KOL intelligence loaded: ${kolList.length} KOLs`);
   }
 } catch (err) {
-  console.log('[room] KOL research not available:', err.message);
+  console.log('[room] KOL intelligence not available:', err.message);
+}
+
+/**
+ * Get dynamic KOL context for agent prompts
+ */
+function getKOLContext() {
+  if (kolList.length === 0) return '';
+
+  const tierAPlus = kolList.filter(k => k.tier === 'A+').slice(0, 4);
+  const tierA = kolList.filter(k => k.tier === 'A').slice(0, 10);
+  const tierB = kolList.filter(k => k.tier === 'B').slice(0, 5);
+
+  let context = '\n\nLIVE KOL INTELLIGENCE (from kolscan.io + research):\n';
+
+  context += '\nTier A+ (Mega influencers - only engage with genuine value):\n';
+  for (const kol of tierAPlus) {
+    context += `- ${kol.handle} (${kol.name}) - ${kol.category}, ${kol.followers || 'influential'}, style: ${kol.style || 'varies'}${kol.note ? ` | ${kol.note}` : ''}\n`;
+  }
+
+  context += '\nTier A (High-value targets - be respectful, add to conversations):\n';
+  for (const kol of tierA) {
+    const profit = kol.profit ? ` | ${kol.profit} profit` : '';
+    context += `- ${kol.handle} (${kol.name}) - ${kol.category}, ${kol.style || 'active trader'}${profit}\n`;
+  }
+
+  context += '\nTier B (Relationship building - be friendly, engage regularly):\n';
+  for (const kol of tierB) {
+    context += `- ${kol.handle} (${kol.name}) - ${kol.category}\n`;
+  }
+
+  context += '\nEngagement rules by tier:\n';
+  context += '- A+: NEVER shill, only reply if you have genuine insight or value to add\n';
+  context += '- A: Be respectful, match their energy, add to conversation, subtle mentions ok\n';
+  context += '- B: Be friendly, build relationship, can discuss your project naturally\n';
+
+  return context;
 }
 
 // Load GitHub awareness for shipping context
@@ -398,13 +439,8 @@ function getSharedMemoryContext() {
     } catch (e) {}
   }
 
-  // Add KOL context if available
-  if (kolResearch && kolResearch.topKols) {
-    const tierA = kolResearch.topKols.filter(k => k.tier === 'A').slice(0, 3);
-    if (tierA.length > 0) {
-      context += '\n\nTOP KOLs TO ENGAGE: ' + tierA.map(k => k.handle).join(', ');
-    }
-  }
+  // Add dynamic KOL intelligence context
+  context += getKOLContext();
 
   // Add GitHub context (recent commits, shipping activity)
   if (githubAwareness) {

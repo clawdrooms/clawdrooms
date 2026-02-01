@@ -531,44 +531,60 @@ async function postingCycle() {
 }
 
 /**
- * Main loop
+ * Check if it's time to post (robust polling approach)
+ * This is resilient to PM2 restarts - always checks actual last post time
+ */
+function shouldPost() {
+  const state = loadState();
+
+  const lastPost = new Date(Math.max(
+    new Date(state.lastTimelinePost || 0).getTime(),
+    new Date(state.lastCommunityPost || 0).getTime()
+  ));
+
+  const elapsed = Date.now() - lastPost.getTime();
+  const shouldPostNow = elapsed >= CONFIG.timelineIntervalMs;
+
+  return { shouldPostNow, elapsed, lastPost };
+}
+
+/**
+ * Main posting tick - runs every 30 seconds, only posts if 15+ min elapsed
+ */
+async function postingTick() {
+  const { shouldPostNow, elapsed, lastPost } = shouldPost();
+
+  if (shouldPostNow) {
+    console.log(`[x-cadence] ${Math.round(elapsed / 1000 / 60)} min since last post, posting now`);
+    await postingCycle();
+  }
+  // If not time to post, just silently wait for next tick
+}
+
+/**
+ * Main loop - uses polling for robust timing
  */
 async function main() {
   console.log('[x-cadence] Starting X Cadence for Developer Clawd');
   console.log('[x-cadence] Schedule: 3 timeline posts (every 15 min) + 1 community post per hour');
   console.log('[x-cadence] Mentions: checking every 1 minute');
+  console.log('[x-cadence] Using robust polling (checks every 30s, posts when 15+ min elapsed)');
 
-  const state = loadState();
-
-  // Calculate time until next post (respect 15-min intervals even across restarts)
-  let initialDelay = 0;
-  if (state.lastTimelinePost || state.lastCommunityPost) {
-    const lastPost = new Date(Math.max(
-      new Date(state.lastTimelinePost || 0).getTime(),
-      new Date(state.lastCommunityPost || 0).getTime()
-    ));
-    const elapsed = Date.now() - lastPost.getTime();
-    const remaining = CONFIG.timelineIntervalMs - elapsed;
-
-    if (remaining > 0) {
-      initialDelay = remaining;
-      console.log(`[x-cadence] Last post ${Math.round(elapsed / 1000 / 60)} min ago, waiting ${Math.round(remaining / 1000 / 60)} min until next post`);
-    } else {
-      console.log(`[x-cadence] Last post ${Math.round(elapsed / 1000 / 60)} min ago, posting now`);
-    }
+  // Check immediately if we should post
+  const { shouldPostNow, elapsed } = shouldPost();
+  if (shouldPostNow) {
+    console.log(`[x-cadence] ${Math.round(elapsed / 1000 / 60)} min since last post, posting now`);
+    await postingCycle();
   } else {
-    console.log('[x-cadence] No previous posts found, posting now');
+    const remaining = CONFIG.timelineIntervalMs - elapsed;
+    console.log(`[x-cadence] Last post ${Math.round(elapsed / 1000 / 60)} min ago, next post in ~${Math.round(remaining / 1000 / 60)} min`);
   }
 
-  // Schedule first post after appropriate delay
-  setTimeout(async () => {
-    await postingCycle();
+  // Poll every 30 seconds to check if it's time to post
+  // This is resilient to restarts - always checks actual elapsed time
+  setInterval(postingTick, 30 * 1000);
 
-    // Then post every 15 minutes
-    setInterval(postingCycle, CONFIG.timelineIntervalMs);
-  }, initialDelay);
-
-  // Check mentions every minute (start immediately)
+  // Check mentions every minute
   setInterval(checkMentions, CONFIG.mentionCheckMs);
 
   console.log('[x-cadence] Cadence running');
